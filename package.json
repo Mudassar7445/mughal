@@ -1,0 +1,17 @@
+{
+  "name": "mughal-molding",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "setup": "node setup_db.js"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.6.0",
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.9",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0"
+  }
+}

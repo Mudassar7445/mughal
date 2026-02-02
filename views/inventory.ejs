@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Stock Control | Mughal Molding</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background: #f3f4f6; font-family: 'Segoe UI', sans-serif; }
+        .sidebar { width: 250px; height: 100vh; background: #1e293b; position: fixed; top: 0; left: 0; padding-top: 20px; }
+        .sidebar-brand { color: white; font-size: 20px; font-weight: bold; padding: 15px 25px; margin-bottom: 20px; display: block; text-decoration: none; }
+        .nav-link { color: #94a3b8; font-size: 15px; padding: 12px 25px; display: flex; align-items: center; text-decoration: none; }
+        .nav-link i { margin-right: 12px; font-size: 18px; }
+        .nav-link.active { background: #3b82f6; color: white; margin-right: 15px; border-top-right-radius: 25px; border-bottom-right-radius: 25px; }
+        .main { margin-left: 250px; padding: 30px; }
+        .inventory-header { background: #1e293b; color: white; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <a href="/" class="sidebar-brand">Mughal Molding</a>
+    <nav>
+        <a href="/" class="nav-link"><i class="bi bi-grid-fill"></i> Dashboard</a>
+        <a href="/billing" class="nav-link"><i class="bi bi-receipt"></i> New Billing</a>
+        <a href="/bill_history" class="nav-link"><i class="bi bi-clock-history"></i> Bill History</a>
+        <a href="/inventory" class="nav-link active"><i class="bi bi-box-seam"></i> Stock Control</a>
+        <a href="/customers" class="nav-link"><i class="bi bi-person-rolodex"></i> Khata Register</a>
+    </nav>
+</div>
+
+<div class="main">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Stock Control Panel</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStockModal">
+            <i class="bi bi-plus-lg"></i> Add New Product
+        </button>
+    </div>
+
+    <div class="card p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr class="text-muted">
+                        <th>Product Name</th>
+                        <th>Stock Level</th>
+                        <th>Total Feet</th>
+                        <th>Unit Type</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% products.forEach(row => { %>
+                        <tr>
+                            <td><h6 class="mb-0 fw-semibold"><%= row.item_name %></h6></td>
+                            <td><span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3"><%= row.stock %></span></td>
+                            <td><span class="badge bg-info bg-opacity-10 text-info border border-info px-3"><%= row.feet || '0' %> ft</span></td>
+                            <td><span class="badge bg-dark text-white"><%= row.unit_type %></span></td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-light border" onclick='openEditModal(<%- JSON.stringify(row) %>)'>
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <a href="/delete_product/<%= row.id %>" class="btn btn-sm btn-light border text-danger" onclick="return confirm('Delete item?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addStockModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="/insert_product" method="POST" class="modal-content">
+            <div class="modal-header"><h5>Add New Item</h5></div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label>Item Name</label>
+                    <input type="text" name="item_name" class="form-control" required>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label>Initial Stock (Qty)</label><input type="number" name="stock" class="form-control" required></div>
+                    <div class="col-md-6 mb-3"><label>Size (Feet)</label><input type="number" name="feet" class="form-control"></div>
+                </div>
+                <div class="mb-3">
+                    <label>Measurement Unit</label>
+                    <select name="unit_type" class="form-select">
+                        <option value="Quantity">Quantity (Pcs)</option>
+                        <option value="Length">Length (Feet)</option>
+                        <option value="Bundle">Bundle</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary w-100">Save Product</button></div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="editStockModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="/update_product" method="POST" class="modal-content">
+            <div class="modal-header"><h5>Update Product</h5></div>
+            <div class="modal-body p-4">
+                <input type="hidden" name="id" id="edit_id">
+                <div class="mb-3">
+                    <label>Item Name</label>
+                    <input type="text" name="item_name" id="edit_name" class="form-control" required>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Add Stock (Current: <span id="current_stock"></span>)</label>
+                        <input type="number" name="stock" id="edit_stock" class="form-control" value="0">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Add Feet (Current: <span id="current_feet"></span>)</label>
+                        <input type="number" name="feet" id="edit_feet" class="form-control" value="0">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label>Unit Type</label>
+                    <select name="unit_type" id="edit_unit" class="form-select">
+                        <option value="Quantity">Quantity</option>
+                        <option value="Length">Length</option>
+                        <option value="Bundle">Bundle</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-success w-100">Update Stock</button></div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function openEditModal(data) {
+    document.getElementById('edit_id').value = data.id;
+    document.getElementById('edit_name').value = data.item_name;
+    document.getElementById('current_stock').innerText = data.stock;
+    document.getElementById('current_feet').innerText = data.feet || 0;
+    document.getElementById('edit_unit').value = data.unit_type;
+    
+    let editModal = new bootstrap.Modal(document.getElementById('editStockModal'));
+    editModal.show();
+}
+</script>
+</body>
+</html>

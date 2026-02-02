@@ -1,0 +1,213 @@
+const express = require("express");
+const session = require("express-session");
+const bodyParser = require("body-parser");
+const db = require("./db");
+const app = express();
+
+// Middlewares
+app.set("view engine", "ejs");
+app.use(express.static("public"));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(session({
+    secret: process.env.SESSION_SECRET || "mughal_secret",
+    resave: false,
+    saveUninitialized: true
+}));
+
+// Authentication Check
+const requireAuth = (req, res, next) => {
+    if (!req.session.auth) return res.redirect("/login");
+    next();
+};
+
+// --- AUTH ROUTES ---
+app.get("/login", (req, res) => res.render("login", { error: null }));
+app.post("/login", (req, res) => {
+    if (req.body.password === "mughal123") {
+        req.session.auth = true;
+        return res.redirect("/");
+    }
+    res.render("login", { error: "Ghalat Password!" });
+});
+
+app.get("/logout", (req, res) => {
+    req.session.destroy();
+    res.redirect("/login");
+});
+
+// --- DASHBOARD ---
+app.get("/", requireAuth, async (req, res) => {
+    const today = new Date().toISOString().split("T")[0];
+    const daily = await db.execute({ sql: "SELECT SUM(total_amount) as total FROM khata_records WHERE date(created_at) = ?", args: [today] });
+    const udhaar = await db.execute("SELECT SUM(balance_amount) as total FROM customers_detailed_khata");
+    const bills = await db.execute("SELECT * FROM khata_records ORDER BY id DESC LIMIT 5");
+    const khata = await db.execute("SELECT * FROM customers_detailed_khata ORDER BY id DESC LIMIT 5");
+
+    res.render("index", {
+        daily_sale: daily.rows[0].total || 0,
+        monthly_sale: 0,
+        total_udhaar: udhaar.rows[0].total || 0,
+        recent_bills: bills.rows,
+        recent_khata: khata.rows,
+        date: new Date().toDateString()
+    });
+});
+
+// --- NEW CUSTOMER / OPEN KHATA ROUTES ---
+app.get("/add_customer", requireAuth, (req, res) => {
+    res.render("add_customer");
+});
+
+app.post("/add_customer", requireAuth, async (req, res) => {
+    const { name, phone, address, opening_balance, date } = req.body;
+    
+    try {
+        // 1. Check agar customer pehle se hai
+        const check = await db.execute({
+            sql: "SELECT * FROM customers WHERE name = ? AND phone = ?",
+            args: [name, phone]
+        });
+
+        if (check.rows.length === 0) {
+            // Naya Customer Banao
+            await db.execute({
+                sql: "INSERT INTO customers (name, phone, balance) VALUES (?, ?, ?)",
+                args: [name, phone, opening_balance]
+            });
+        } else {
+            // Purane Customer ka balance update karo
+            await db.execute({
+                sql: "UPDATE customers SET balance = balance + ? WHERE name = ? AND phone = ?",
+                args: [opening_balance, name, phone]
+            });
+        }
+
+        // 2. Agar Opening Balance hai to Khata mein Entry karo
+        if (parseFloat(opening_balance) > 0) {
+            await db.execute({
+                sql: "INSERT INTO customers_detailed_khata (customer_name, customer_phone, customer_address, khata_details, total_amount, paid_amount, balance_amount, entry_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                args: [name, phone, address, "Opening Balance (Purana Khata)", opening_balance, 0, opening_balance, date]
+            });
+        }
+
+        res.redirect("/customer_khata"); 
+    } catch (e) {
+        console.error(e);
+        res.send("Error saving customer: " + e.message);
+    }
+});
+
+// --- STOCK / INVENTORY ROUTES ---
+app.get("/inventory", requireAuth, async (req, res) => {
+    const result = await db.execute("SELECT * FROM products ORDER BY id DESC");
+    res.render("inventory", { products: result.rows });
+});
+
+// 1. Add Product
+app.post("/insert_product", requireAuth, async (req, res) => {
+    const { item_name, stock, feet, unit_type } = req.body;
+    await db.execute({
+        sql: "INSERT INTO products (item_name, price, stock, feet, unit_type) VALUES (?, 0, ?, ?, ?)",
+        args: [item_name, stock, feet || 0, unit_type]
+    });
+    res.redirect("/inventory");
+});
+
+// 2. Update Product (Edit)
+app.post("/update_product", requireAuth, async (req, res) => {
+    const { id, item_name, stock, feet, unit_type } = req.body;
+    await db.execute({
+        sql: "UPDATE products SET item_name = ?, stock = stock + ?, feet = feet + ?, unit_type = ? WHERE id = ?",
+        args: [item_name, stock, feet, unit_type, id]
+    });
+    res.redirect("/inventory");
+});
+
+// 3. Delete Product
+app.get("/delete_product/:id", requireAuth, async (req, res) => {
+    await db.execute({
+        sql: "DELETE FROM products WHERE id = ?",
+        args: [req.params.id]
+    });
+    res.redirect("/inventory");
+});
+
+// --- BILLING ROUTES ---
+app.get("/billing", requireAuth, async (req, res) => {
+    const products = await db.execute("SELECT * FROM products");
+    res.render("billing", { products: products.rows });
+});
+
+app.post("/save_khata", requireAuth, async (req, res) => {
+    const { name, phone, total, advance, remaining, items } = req.body;
+    try {
+        await db.execute({
+            sql: "INSERT INTO khata_records (customer_name, customer_phone, total_amount, advance_paid, remaining_balance, items_json) VALUES (?, ?, ?, ?, ?, ?)",
+            args: [name, phone, total, advance, remaining, items]
+        });
+        
+        const itemsList = JSON.parse(items);
+        for (let item of itemsList) {
+            await db.execute({
+                sql: "UPDATE products SET stock = stock - ?, feet = feet - ? WHERE id = ?",
+                args: [item.qty, item.feet || 0, item.id]
+            });
+        }
+        res.json({ status: "success" });
+    } catch (e) {
+        res.json({ status: "error", message: e.message });
+    }
+});
+
+// --- HISTORY & RECORDS ---
+app.get("/bill_history", requireAuth, async (req, res) => {
+    const query = req.query.query || "";
+    const result = await db.execute({
+        sql: "SELECT * FROM khata_records WHERE customer_name LIKE ? OR id = ? ORDER BY id DESC",
+        args: [`%${query}%`, query]
+    });
+    res.render("bill_history", { bills: result.rows, query });
+});
+
+app.get("/customer_khata", requireAuth, async (req, res) => {
+    const history = await db.execute("SELECT * FROM customers_detailed_khata ORDER BY id DESC");
+    res.render("customer_khata", { history: history.rows, msg: null });
+});
+
+app.post("/customer_khata", requireAuth, async (req, res) => {
+    const { customer_name, customer_phone, customer_address, khata_details, total_amount, paid_amount, entry_date } = req.body;
+    const balance = total_amount - paid_amount;
+    await db.execute({
+        sql: "INSERT INTO customers_detailed_khata (customer_name, customer_phone, customer_address, khata_details, total_amount, paid_amount, balance_amount, entry_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        args: [customer_name, customer_phone, customer_address, khata_details, total_amount, paid_amount, balance, entry_date]
+    });
+    res.redirect("/customer_khata");
+});
+
+// --- UPDATE KHATA ROUTE (Edit Feature Added Here) ---
+app.post("/update_khata", requireAuth, async (req, res) => {
+    const { id, customer_name, customer_phone, khata_details, total_amount, paid_amount, entry_date } = req.body;
+    const balance = total_amount - paid_amount; 
+
+    try {
+        await db.execute({
+            sql: "UPDATE customers_detailed_khata SET customer_name=?, customer_phone=?, khata_details=?, total_amount=?, paid_amount=?, balance_amount=?, entry_date=? WHERE id=?",
+            args: [customer_name, customer_phone, khata_details, total_amount, paid_amount, balance, entry_date, id]
+        });
+        res.redirect("/customer_khata");
+    } catch (e) {
+        console.error(e);
+        res.send("Update Error: " + e.message);
+    }
+});
+
+app.get("/customers", requireAuth, async (req, res) => {
+    const records = await db.execute("SELECT * FROM khata_records ORDER BY id DESC");
+    res.render("customers", { records: records.rows });
+});
+
+// Start Server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Mughal Molding Server is Running on port ${PORT}!`));

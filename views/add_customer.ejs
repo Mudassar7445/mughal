@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Open New Khata | Mughal Molding</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background: #f3f4f6; font-family: 'Segoe UI', sans-serif; }
+        .sidebar { width: 250px; height: 100vh; background: #1e293b; position: fixed; top: 0; left: 0; padding-top: 20px; }
+        .sidebar-brand { color: white; font-size: 20px; font-weight: bold; padding: 15px 25px; margin-bottom: 20px; display: block; text-decoration: none; }
+        .nav-link { color: #94a3b8; font-size: 15px; padding: 12px 25px; display: flex; align-items: center; text-decoration: none; transition: 0.3s; }
+        .nav-link i { margin-right: 12px; font-size: 18px; }
+        .nav-link:hover { color: white; background: rgba(255,255,255,0.05); }
+        .nav-link.active { background: #3b82f6; color: white; margin-right: 15px; border-top-right-radius: 25px; border-bottom-right-radius: 25px; }
+        .main { margin-left: 250px; padding: 30px; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); background: white; padding: 30px; }
+        .form-label { font-weight: 600; color: #475569; font-size: 14px; }
+        .form-control { padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .form-control:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <a href="/" class="sidebar-brand">Mughal Molding</a>
+    <nav>
+        <a href="/" class="nav-link"><i class="bi bi-grid-fill"></i> Dashboard</a>
+        <a href="/billing" class="nav-link"><i class="bi bi-receipt"></i> New Billing</a>
+        <a href="/bill_history" class="nav-link"><i class="bi bi-clock-history"></i> Bill History</a>
+        
+        <a href="/add_customer" class="nav-link active"><i class="bi bi-person-plus-fill"></i> Open New Khata</a>
+        
+        <a href="/customer_khata" class="nav-link"><i class="bi bi-journal-text"></i> Detailed Khata</a>
+        <a href="/inventory" class="nav-link"><i class="bi bi-box-seam"></i> Stock Control</a>
+        <a href="/customers" class="nav-link"><i class="bi bi-person-rolodex"></i> Khata Register</a>
+        <div style="margin-top: 50px;">
+            <a href="/logout" class="nav-link text-danger"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        </div>
+    </nav>
+</div>
+
+<div class="main">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark">Open New Customer Account</h2>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <h5 class="fw-bold border-bottom pb-3 mb-4 text-primary"><i class="bi bi-person-vcard me-2"></i>Customer Details</h5>
+                
+                <form action="/add_customer" method="POST">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="name" class="form-control" placeholder="Customer ka naam..." required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone Number</label>
+                            <input type="text" name="phone" class="form-control" placeholder="03xxxxxxxxx">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Address / Location</label>
+                        <textarea name="address" class="form-control" rows="3" placeholder="Shop ya Ghar ka pata..."></textarea>
+                    </div>
+
+                    <h5 class="fw-bold border-bottom pb-3 mb-4 mt-4 text-danger"><i class="bi bi-wallet2 me-2"></i>Initial Khata Info</h5>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Opening Balance (Purana Udhaar)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">Rs.</span>
+                                <input type="number" name="opening_balance" class="form-control" value="0" required>
+                            </div>
+                            <small class="text-muted">Agar pehle ka koi udhaar nahi to 0 likhen.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Date of Opening</label>
+                            <input type="date" name="date" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>">
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary fw-bold py-2">
+                            <i class="bi bi-save me-2"></i> Create Customer Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

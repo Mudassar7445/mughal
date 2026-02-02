@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Billing | Mughal Molding</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        /* SAME CSS AS BEFORE */
+        body { background: #e2e8f0; font-family: 'Segoe UI', sans-serif; font-size: 13px; }
+        .main-row { margin: 5px; }
+        .bill-container { background: white; padding: 20px; border-radius: 2px; min-height: 80vh; margin: auto; }
+        .input-sidebar { background: #fff; padding: 12px; border-radius: 8px; position: sticky; top: 5px; border: 1px solid #cbd5e1; }
+        .shop-header h4 { font-weight: 800; color: #1e293b; margin-bottom: 2px; }
+        @media print {
+            @page { margin: 0; size: auto; }
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; margin: 0; }
+            .bill-container { width: 80mm; padding: 5mm !important; margin: 0; box-shadow: none !important; }
+            table { font-size: 10px !important; border: 1px solid #000 !important; }
+            th, td { padding: 2px !important; border: 1px solid #000 !important; }
+            .shop-header h4 { font-size: 16px !important; }
+            .shop-header div { font-size: 10px !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid no-print py-1 border-bottom bg-white">
+    <div class="d-flex justify-content-between align-items-center px-3">
+        <a href="/" class="btn btn-outline-dark btn-sm"><i class="bi bi-arrow-left"></i> Dashboard</a>
+        <h6 class="mb-0 fw-bold">MUGHAL MOLDING BILLING</h6>
+        <button onclick="processBill('khata')" class="btn btn-warning btn-sm fw-bold">Save to Khata</button>
+    </div>
+</div>
+
+<div class="main-row row">
+    <div class="col-lg-8">
+        <div class="bill-container shadow-sm" id="printableBill">
+            <div class="shop-header text-center mb-3">
+                <h4 class="mb-0">MUGHAL MOLDING CENTER</h4>
+                <div class="small">Samundri Road Near Shell Pump, Faisalabad</div>
+                <div class="fw-bold small">0322-6034597 | 0322-6039065</div>
+            </div>
+
+            <div class="row mb-2 small">
+                <div class="col-7">
+                    <div id="display_name_row" style="display:none;">Cust: <strong id="view_name"></strong></div>
+                    <div id="display_phone_row" style="display:none;">Ph: <strong id="view_phone"></strong></div>
+                </div>
+                <div class="col-5 text-end">Date: <%= new Date().toLocaleDateString('en-GB') %></div>
+            </div>
+
+            <table class="table table-sm table-bordered border-dark" id="billTable">
+                <thead class="text-center table-light border-dark">
+                    <tr><th>Item</th><th>Unit</th><th>Qty</th><th>Feet</th><th>Rate</th><th>Total</th><th class="no-print"></th></tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot class="fw-bold border-dark">
+                    <tr><td colspan="5" class="text-end text-uppercase">Grand Total:</td><td class="text-end" id="grandTotal">0.00</td><td class="no-print"></td></tr>
+                    <tr id="rem_row" class="text-danger" style="display:none;"><td colspan="5" class="text-end">Remaining Bal:</td><td class="text-end" id="remaining_bal">0.00</td><td class="no-print"></td></tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-lg-4 no-print">
+        <div class="input-sidebar shadow-sm">
+            <h6 class="fw-bold mb-3 border-bottom pb-2">Entry Panel</h6>
+            <input type="text" id="cust_name" class="form-control form-control-sm mb-2" placeholder="Customer Name" oninput="updateLiveDetails()">
+            <input type="text" id="cust_phone" class="form-control form-control-sm mb-3" placeholder="Phone Number" oninput="updateLiveDetails()">
+
+            <div class="p-2 border rounded bg-light mb-3">
+                <label class="small fw-bold">Search Product</label>
+                <input list="products_list" id="prod_input" class="form-control form-control-sm mb-1" placeholder="Type name..." onchange="updateStockLabel()">
+                <datalist id="products_list">
+                    <% products.forEach(function(p) { %>
+                        <option value='<%= p.item_name %>' data-id='<%= p.id %>' data-unit='<%= p.unit_type %>' data-stock='<%= p.stock %>'></option>
+                    <% }); %>
+                </datalist>
+                <div id="stock_status" class="mb-2" style="font-size: 11px;"></div>
+                
+                <div class="row g-1 mb-2">
+                    <div class="col-6"><label class="small">Rate</label><input type="number" id="prod_price" class="form-control form-control-sm" placeholder="Rate"></div>
+                    <div class="col-6"><label class="small">Qty</label><input type="number" id="prod_qty" value="1" class="form-control form-control-sm"></div>
+                </div>
+                <div class="mb-2">
+                    <label class="small">Size in Feet (Optional)</label>
+                    <input type="number" id="prod_feet" class="form-control form-control-sm" placeholder="e.g 120">
+                </div>
+                <button onclick="addItem()" class="btn btn-primary btn-sm w-100">Add Item</button>
+            </div>
+
+            <label class="small fw-bold">Advance Paid</label>
+            <input type="number" id="advance_paid" class="form-control form-control-sm mb-3" oninput="calculateRemaining()" placeholder="Amount Paid">
+
+            <button onclick="processBill('print')" class="btn btn-success w-100 fw-bold py-2 shadow-sm"><i class="bi bi-printer"></i> PRINT & SAVE</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // JS Logic exactly same as before, just kept the processBill fetch updated
+    let itemsArray = [];
+
+    function updateLiveDetails() {
+        let name = document.getElementById('cust_name').value;
+        let phone = document.getElementById('cust_phone').value;
+        document.getElementById('display_name_row').style.display = name ? "block" : "none";
+        document.getElementById('view_name').innerText = name;
+        document.getElementById('display_phone_row').style.display = phone ? "block" : "none";
+        document.getElementById('view_phone').innerText = phone;
+    }
+
+    function updateStockLabel() {
+        let val = document.getElementById('prod_input').value;
+        let opts = document.getElementById('products_list').options;
+        let label = document.getElementById('stock_status');
+        for (let i = 0; i < opts.length; i++) {
+            if (opts[i].value === val) {
+                let s = opts[i].getAttribute('data-stock');
+                let u = opts[i].getAttribute('data-unit');
+                label.innerHTML = `<span class="badge ${s > 5 ? 'bg-success' : 'bg-danger'}">Stock: ${s} ${u}</span>`;
+                return;
+            }
+        }
+        label.innerHTML = "";
+    }
+
+    function addItem() {
+        let val = document.getElementById('prod_input').value;
+        let opts = document.getElementById('products_list').options;
+        let id = "", unit = "", availableStock = 0;
+        for (let i = 0; i < opts.length; i++) {
+            if (opts[i].value === val) {
+                id = opts[i].getAttribute('data-id');
+                unit = opts[i].getAttribute('data-unit');
+                availableStock = parseFloat(opts[i].getAttribute('data-stock'));
+                break;
+            }
+        }
+        let price = parseFloat(document.getElementById('prod_price').value);
+        let qty = parseFloat(document.getElementById('prod_qty').value) || 0;
+        let feet = parseFloat(document.getElementById('prod_feet').value) || 0;
+        if(!id || isNaN(price)) return alert("Rate aur Product select karein!");
+        if (qty > availableStock) return alert("Stock kam hai! Available: " + availableStock);
+
+        let subtotal = (feet > 0) ? (feet * price) : (qty * price);
+        itemsArray.push({ id: id, name: val, unit: unit, price: price, qty: qty, feet: feet, subtotal: subtotal });
+        renderTable();
+        // Clear inputs
+        document.getElementById('prod_input').value = ''; document.getElementById('prod_price').value = ''; 
+        document.getElementById('prod_feet').value = ''; document.getElementById('prod_qty').value = '1'; document.getElementById('stock_status').innerHTML = "";
+    }
+
+    function renderTable() {
+        let html = ""; let gTotal = 0;
+        itemsArray.forEach((item, index) => {
+            html += `<tr><td>${item.name}</td><td class="text-center">${item.unit}</td><td class="text-center">${item.qty}</td><td class="text-center">${item.feet > 0 ? item.feet : '-'}</td><td class="text-center">${item.price}</td><td class="text-end">${item.subtotal.toFixed(2)}</td><td class="no-print text-center text-danger" onclick="removeItem(${index})" style="cursor:pointer">X</td></tr>`;
+            gTotal += item.subtotal;
+        });
+        document.querySelector('#billTable tbody').innerHTML = html;
+        document.getElementById('grandTotal').innerText = gTotal.toFixed(2);
+        calculateRemaining();
+    }
+    function removeItem(index) { itemsArray.splice(index, 1); renderTable(); }
+    function calculateRemaining() {
+        let total = parseFloat(document.getElementById('grandTotal').innerText) || 0;
+        let adv = parseFloat(document.getElementById('advance_paid').value) || 0;
+        let rem = total - adv;
+        document.getElementById('remaining_bal').innerText = rem.toFixed(2);
+        document.getElementById('rem_row').style.display = (rem > 0) ? "table-row" : "none";
+    }
+
+    function processBill(type) {
+        if(itemsArray.length === 0) return alert("Pehle item add karein!");
+        let data = {
+            name: document.getElementById('cust_name').value || "Cash Sale",
+            phone: document.getElementById('cust_phone').value || "",
+            total: document.getElementById('grandTotal').innerText,
+            advance: document.getElementById('advance_paid').value || document.getElementById('grandTotal').innerText,
+            remaining: document.getElementById('remaining_bal').innerText,
+            items: JSON.stringify(itemsArray),
+            action_type: type 
+        };
+
+        // Fetch to NODE Route
+        fetch('/save_khata', { 
+            method: 'POST', 
+            body: JSON.stringify(data), 
+            headers: { 'Content-Type': 'application/json' } 
+        })
+        .then(res => res.json())
+        .then(res => {
+            if(res.status === 'success') {
+                if(type === 'print') { window.print(); location.reload(); }
+                else { alert("Saved & Stock Updated!"); location.reload(); }
+            } else { alert("Error: " + res.message); }
+        });
+    }
+</script>
+</body>
+</html>
