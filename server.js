@@ -1,12 +1,14 @@
 const express = require("express");
 const session = require("express-session");
 const bodyParser = require("body-parser");
+const path = require("path"); // Vercel ke liye path module zaroori hai
 const db = require("./db");
 const app = express();
 
-// Middlewares
+// Middlewares & View Engine Setup
+app.set("views", path.join(__dirname, "views")); // Folder path theek kia
 app.set("view engine", "ejs");
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -62,36 +64,28 @@ app.get("/add_customer", requireAuth, (req, res) => {
 
 app.post("/add_customer", requireAuth, async (req, res) => {
     const { name, phone, address, opening_balance, date } = req.body;
-    
     try {
-        // 1. Check agar customer pehle se hai
         const check = await db.execute({
             sql: "SELECT * FROM customers WHERE name = ? AND phone = ?",
             args: [name, phone]
         });
-
         if (check.rows.length === 0) {
-            // Naya Customer Banao
             await db.execute({
                 sql: "INSERT INTO customers (name, phone, balance) VALUES (?, ?, ?)",
                 args: [name, phone, opening_balance]
             });
         } else {
-            // Purane Customer ka balance update karo
             await db.execute({
                 sql: "UPDATE customers SET balance = balance + ? WHERE name = ? AND phone = ?",
                 args: [opening_balance, name, phone]
             });
         }
-
-        // 2. Agar Opening Balance hai to Khata mein Entry karo
         if (parseFloat(opening_balance) > 0) {
             await db.execute({
                 sql: "INSERT INTO customers_detailed_khata (customer_name, customer_phone, customer_address, khata_details, total_amount, paid_amount, balance_amount, entry_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 args: [name, phone, address, "Opening Balance (Purana Khata)", opening_balance, 0, opening_balance, date]
             });
         }
-
         res.redirect("/customer_khata"); 
     } catch (e) {
         console.error(e);
@@ -105,7 +99,6 @@ app.get("/inventory", requireAuth, async (req, res) => {
     res.render("inventory", { products: result.rows });
 });
 
-// 1. Add Product
 app.post("/insert_product", requireAuth, async (req, res) => {
     const { item_name, stock, feet, unit_type } = req.body;
     await db.execute({
@@ -115,7 +108,6 @@ app.post("/insert_product", requireAuth, async (req, res) => {
     res.redirect("/inventory");
 });
 
-// 2. Update Product (Edit)
 app.post("/update_product", requireAuth, async (req, res) => {
     const { id, item_name, stock, feet, unit_type } = req.body;
     await db.execute({
@@ -125,7 +117,6 @@ app.post("/update_product", requireAuth, async (req, res) => {
     res.redirect("/inventory");
 });
 
-// 3. Delete Product
 app.get("/delete_product/:id", requireAuth, async (req, res) => {
     await db.execute({
         sql: "DELETE FROM products WHERE id = ?",
@@ -147,7 +138,6 @@ app.post("/save_khata", requireAuth, async (req, res) => {
             sql: "INSERT INTO khata_records (customer_name, customer_phone, total_amount, advance_paid, remaining_balance, items_json) VALUES (?, ?, ?, ?, ?, ?)",
             args: [name, phone, total, advance, remaining, items]
         });
-        
         const itemsList = JSON.parse(items);
         for (let item of itemsList) {
             await db.execute({
@@ -186,11 +176,9 @@ app.post("/customer_khata", requireAuth, async (req, res) => {
     res.redirect("/customer_khata");
 });
 
-// --- UPDATE KHATA ROUTE (Edit Feature Added Here) ---
 app.post("/update_khata", requireAuth, async (req, res) => {
     const { id, customer_name, customer_phone, khata_details, total_amount, paid_amount, entry_date } = req.body;
     const balance = total_amount - paid_amount; 
-
     try {
         await db.execute({
             sql: "UPDATE customers_detailed_khata SET customer_name=?, customer_phone=?, khata_details=?, total_amount=?, paid_amount=?, balance_amount=?, entry_date=? WHERE id=?",
@@ -208,6 +196,5 @@ app.get("/customers", requireAuth, async (req, res) => {
     res.render("customers", { records: records.rows });
 });
 
-// Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Mughal Molding Server is Running on port ${PORT}!`));
