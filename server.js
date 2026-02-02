@@ -3,16 +3,16 @@ const session = require("express-session");
 const bodyParser = require("body-parser");
 const path = require("path");
 
-// --- DATABASE CONNECTION (DIRECT FIX) ---
-// Hum ne db.js ko khatam kar diya hai. Direct yahan connect kar rahe hain.
-// Note: Hum HTTPS use kar rahe hain taake 'Migration Jobs' wala error na aaye.
-const { createClient } = require("@libsql/client");
+// --- DATABASE CONNECTION (THE FINAL FIX) ---
+// Hum '/web' use kar rahe hain. Ye Vercel ke liye bana hai.
+// Ye 'Migration Jobs' error ko jar (root) se khatam kar dega.
+const { createClient } = require("@libsql/client/web");
 
 const db = createClient({
   url: "https://mughal-db-mudassar7445.aws-ap-south-1.turso.io",
   authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzAwNTEyMzEsImlkIjoiOGJlZDE1YWItOWUyNy00MjRiLThjYzMtNmFjN2NiZTIzY2UxIiwicmlkIjoiMjY1YjNiMTgtZDA1YS00OTUxLWI2YzktMDMzYzNlZjFhNjJiIn0.zVBC046n-Ngq-_DGweCU8iHp_gUJDTZUMqJPQzRcgdLhYrq3ID6ltbj8n0HvwvsgnoLbLOWUK7vujFlc7vjvDA"
 });
-// ----------------------------------------
+// -------------------------------------------
 
 const app = express();
 
@@ -55,7 +55,6 @@ app.get("/", requireAuth, async (req, res) => {
     const today = new Date().toISOString().split("T")[0];
 
     try {
-        // Promise.all use kar ke 4 queries ek sath chalayen ge (Speed Up)
         const [daily, udhaar, bills, khata] = await Promise.all([
             db.execute({ sql: "SELECT SUM(total_amount) as total FROM khata_records WHERE date(created_at) = ?", args: [today] }),
             db.execute("SELECT SUM(balance_amount) as total FROM customers_detailed_khata"),
