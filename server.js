@@ -1,12 +1,12 @@
 const express = require("express");
 const session = require("express-session");
 const bodyParser = require("body-parser");
-const path = require("path"); // Vercel ke liye path module zaroori hai
+const path = require("path");
 const db = require("./db");
 const app = express();
 
 // Middlewares & View Engine Setup
-app.set("views", path.join(__dirname, "views")); // Folder path theek kia
+app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.json());
@@ -39,22 +39,31 @@ app.get("/logout", (req, res) => {
     res.redirect("/login");
 });
 
-// --- DASHBOARD ---
+// --- DASHBOARD (OPTIMIZED / TEZ WALA) ---
 app.get("/", requireAuth, async (req, res) => {
     const today = new Date().toISOString().split("T")[0];
-    const daily = await db.execute({ sql: "SELECT SUM(total_amount) as total FROM khata_records WHERE date(created_at) = ?", args: [today] });
-    const udhaar = await db.execute("SELECT SUM(balance_amount) as total FROM customers_detailed_khata");
-    const bills = await db.execute("SELECT * FROM khata_records ORDER BY id DESC LIMIT 5");
-    const khata = await db.execute("SELECT * FROM customers_detailed_khata ORDER BY id DESC LIMIT 5");
 
-    res.render("index", {
-        daily_sale: daily.rows[0].total || 0,
-        monthly_sale: 0,
-        total_udhaar: udhaar.rows[0].total || 0,
-        recent_bills: bills.rows,
-        recent_khata: khata.rows,
-        date: new Date().toDateString()
-    });
+    try {
+        // Promise.all use kar ke 4 queries ek sath chalayen ge (Speed Up)
+        const [daily, udhaar, bills, khata] = await Promise.all([
+            db.execute({ sql: "SELECT SUM(total_amount) as total FROM khata_records WHERE date(created_at) = ?", args: [today] }),
+            db.execute("SELECT SUM(balance_amount) as total FROM customers_detailed_khata"),
+            db.execute("SELECT * FROM khata_records ORDER BY id DESC LIMIT 5"),
+            db.execute("SELECT * FROM customers_detailed_khata ORDER BY id DESC LIMIT 5")
+        ]);
+
+        res.render("index", {
+            daily_sale: daily.rows[0]?.total || 0,
+            monthly_sale: 0,
+            total_udhaar: udhaar.rows[0]?.total || 0,
+            recent_bills: bills.rows,
+            recent_khata: khata.rows,
+            date: new Date().toDateString()
+        });
+    } catch (e) {
+        console.error("Dashboard Error:", e);
+        res.send("Dashboard Load Error: " + e.message);
+    }
 });
 
 // --- NEW CUSTOMER / OPEN KHATA ROUTES ---
