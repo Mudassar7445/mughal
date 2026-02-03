@@ -6,71 +6,83 @@
     <title>Customer Khata | Mughal Molding</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .sidebar-card { border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .sidebar-header { background: #0d6efd; color: white; border-radius: 10px 10px 0 0; padding: 15px; }
+        .table-card { border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .table-dark-header { background: #212529; color: white; }
+        .form-label { font-weight: 600; font-size: 0.9rem; color: #495057; }
+        .btn-action { padding: 4px 8px; font-size: 0.9rem; }
+    </style>
 </head>
-<body class="bg-light">
+<body>
 
-<nav class="navbar navbar-dark bg-dark mb-4">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="/">Mughal Molding</a>
-        <a href="/" class="btn btn-secondary btn-sm">Back to Dashboard</a>
+<nav class="navbar navbar-dark bg-dark py-2 mb-4">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <a class="navbar-brand fw-bold fs-4" href="/">Mughal Molding</a>
+        <a href="/" class="btn btn-outline-light btn-sm">Back to Dashboard</a>
     </div>
 </nav>
 
-<div class="container">
+<div class="container-fluid px-4">
     <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm sticky-top" style="top: 20px;">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">➕ New Khata Entry</h5>
+        <div class="col-lg-4 mb-4">
+            <div class="sidebar-card bg-white">
+                <div class="sidebar-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold" id="formTitle">➕ New Khata Entry</h5>
+                    <button type="button" class="btn btn-sm btn-light text-primary" onclick="resetForm()" id="resetBtn" style="display: none;">New Entry</button>
                 </div>
-                <div class="card-body">
-                    <form action="/customer_khata" method="POST">
-                        <div class="mb-2">
-                            <label class="small fw-bold">Date</label>
-                            <input type="date" name="entry_date" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>" required>
+                <div class="card-body p-4">
+                    <form action="/customer_khata" method="POST" id="khataForm">
+                        
+                        <input type="hidden" name="id" id="editId">
+
+                        <div class="mb-3">
+                            <label class="form-label">Date</label>
+                            <input type="date" name="entry_date" id="entry_date" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>" required>
                         </div>
-                        <div class="mb-2">
-                            <label class="small fw-bold">Customer Name</label>
-                            <input type="text" name="customer_name" class="form-control" placeholder="Naam likhein" required>
+                        <div class="mb-3">
+                            <label class="form-label">Customer Name</label>
+                            <input type="text" name="customer_name" id="customer_name" class="form-control" placeholder="Naam likhein" required>
                         </div>
-                        <div class="mb-2">
-                            <label class="small fw-bold">Phone</label>
-                            <input type="text" name="customer_phone" class="form-control" placeholder="Mobile Number">
+                        <div class="mb-3">
+                            <label class="form-label">Phone</label>
+                            <input type="text" name="customer_phone" id="customer_phone" class="form-control" placeholder="Mobile Number">
                         </div>
-                        <div class="mb-2">
-                            <label class="small fw-bold">Details (Samaan)</label>
-                            <textarea name="khata_details" class="form-control" rows="2" placeholder="Kya samaan liya?"></textarea>
+                        <div class="mb-3">
+                            <label class="form-label">Details (Samaan)</label>
+                            <textarea name="khata_details" id="khata_details" class="form-control" rows="3" placeholder="Kya samaan liya?"></textarea>
                         </div>
                         <div class="row">
-                            <div class="col-6 mb-2">
-                                <label class="small fw-bold">Total Amount</label>
-                                <input type="number" name="total_amount" class="form-control" placeholder="0">
+                            <div class="col-6 mb-3">
+                                <label class="form-label">Total Amount</label>
+                                <input type="number" name="total_amount" id="total_amount" class="form-control" placeholder="0">
                             </div>
-                            <div class="col-6 mb-2">
-                                <label class="small fw-bold">Paid (Wasool)</label>
-                                <input type="number" name="paid_amount" class="form-control" placeholder="0">
+                            <div class="col-6 mb-3">
+                                <label class="form-label">Paid (Wasool)</label>
+                                <input type="number" name="paid_amount" id="paid_amount" class="form-control" placeholder="0">
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-success w-100 mt-2 fw-bold">Save Entry</button>
+                        <button type="submit" class="btn btn-success w-100 fw-bold py-2" id="formBtn">Save Entry</button>
                     </form>
                 </div>
             </div>
-            
             <div class="text-center mt-3">
-                <a href="/add_customer" class="btn btn-outline-primary w-100">Add New Customer (Opening Balance)</a>
+                <a href="/add_customer" class="btn btn-outline-primary w-100 fw-bold py-2">Open New Khata (Opening Balance)</a>
             </div>
         </div>
 
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">📜 Khata Register</h5>
+        <div class="col-lg-8">
+            <div class="table-card bg-white">
+                <div class="table-dark-header p-3 d-flex justify-content-between align-items-center rounded-top">
+                    <h5 class="mb-0 fw-bold">📜 Khata Register</h5>
                     <input type="text" id="searchBox" class="form-control form-control-sm w-50" placeholder="Search Name..." onkeyup="filterTable()">
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
-                        <table class="table table-striped table-hover mb-0" id="khataTable">
-                            <thead class="table-dark sticky-top">
+                    <div class="table-responsive" style="max-height: 650px; overflow-y: auto;">
+                        <table class="table table-striped table-hover align-middle mb-0" id="khataTable">
+                            <thead class="table-dark small sticky-top">
                                 <tr>
                                     <th>Date</th>
                                     <th>Name/Phone</th>
@@ -78,34 +90,43 @@
                                     <th>Total</th>
                                     <th>Paid</th>
                                     <th>Balance</th>
-                                    <th>Action</th> </tr>
+                                    <th class="text-center">Action</th>
+                                </tr>
                             </thead>
                             <tbody>
                                 <% if (history.length > 0) { %>
                                     <% history.forEach(item => { %>
                                         <tr>
-                                            <td class="small"><%= item.entry_date %></td>
+                                            <td class="small text-muted"><%= item.entry_date %></td>
                                             <td>
-                                                <strong><%= item.customer_name %></strong><br>
+                                                <strong class="text-dark"><%= item.customer_name %></strong><br>
                                                 <small class="text-muted"><%= item.customer_phone %></small>
                                             </td>
-                                            <td class="small"><%= item.khata_details %></td>
+                                            <td class="small text-secondary"><%= item.khata_details %></td>
                                             <td class="text-primary fw-bold"><%= item.total_amount %></td>
                                             <td class="text-success fw-bold"><%= item.paid_amount %></td>
                                             <td class="text-danger fw-bold"><%= item.balance_amount %></td>
-                                            <td>
-                                                <a href="/delete_khata/<%= item.id %>" 
-                                                   class="btn btn-sm btn-danger py-0 px-2"
-                                                   onclick="return confirm('Delete kar du?');"
-                                                   title="Delete Entry">
-                                                    🗑️
-                                                </a>
+                                            <td class="text-center">
+                                                <div class="d-flex justify-content-center gap-1">
+                                                    <button type="button" class="btn btn-action btn-warning text-dark" 
+                                                        onclick="editEntry('<%= item.id %>', '<%= item.entry_date %>', '<%= item.customer_name %>', '<%= item.customer_phone %>', `<%= item.khata_details %>`, '<%= item.total_amount %>', '<%= item.paid_amount %>')"
+                                                        title="Edit Entry">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </button>
+
+                                                    <a href="/delete_khata/<%= item.id %>" 
+                                                       class="btn btn-action btn-danger"
+                                                       onclick="return confirm('Kya aap waqai delete karna chahte hain?');"
+                                                       title="Delete Entry">
+                                                        <i class="bi bi-trash-fill"></i>
+                                                    </a>
+                                                </div>
                                             </td>
                                         </tr>
                                     <% }) %>
                                 <% } else { %>
                                     <tr>
-                                        <td colspan="7" class="text-center text-muted py-3">Abhi tak koi khata nahi hai.</td>
+                                        <td colspan="7" class="text-center text-muted py-4 fw-bold">Abhi tak koi entry nahi hai.</td>
                                     </tr>
                                 <% } %>
                             </tbody>
@@ -118,21 +139,67 @@
 </div>
 
 <script>
+    // Jab EDIT button dabaya jaye
+    function editEntry(id, date, name, phone, details, total, paid) {
+        // 1. Form ke inputs mein data bharein
+        document.getElementById('editId').value = id;
+        document.getElementById('entry_date').value = date;
+        document.getElementById('customer_name').value = name;
+        document.getElementById('customer_phone').value = phone;
+        document.getElementById('khata_details').value = details;
+        document.getElementById('total_amount').value = total;
+        document.getElementById('paid_amount').value = paid;
+
+        // 2. Form ka Title aur Button change karein
+        document.getElementById('formTitle').innerText = "✏️ Edit Khata Entry";
+        document.getElementById('formBtn').innerText = "Update Entry";
+        document.getElementById('formBtn').classList.replace('btn-success', 'btn-warning');
+        
+        // 3. Form ka Action change karein (Update route par bhejen)
+        document.getElementById('khataForm').action = "/update_khata";
+
+        // 4. Reset button dikhayen
+        document.getElementById('resetBtn').style.display = "inline-block";
+
+        // 5. Upar scroll karein taake user ko form dikhayi de
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Jab "New Entry" button dabaya jaye (Wapis normal mode)
+    function resetForm() {
+        // Inputs khaali karein
+        document.getElementById('editId').value = "";
+        document.getElementById('customer_name').value = "";
+        document.getElementById('customer_phone').value = "";
+        document.getElementById('khata_details').value = "";
+        document.getElementById('total_amount').value = "";
+        document.getElementById('paid_amount').value = "";
+        // Date ko wapis aaj ki date par set karein
+        document.getElementById('entry_date').value = new Date().toISOString().split('T')[0];
+
+        // Title aur Button wapis change karein
+        document.getElementById('formTitle').innerText = "➕ New Khata Entry";
+        document.getElementById('formBtn').innerText = "Save Entry";
+        document.getElementById('formBtn').classList.replace('btn-warning', 'btn-success');
+
+        // Action wapis Add route par
+        document.getElementById('khataForm').action = "/customer_khata";
+
+        // Reset button chhupayen
+        document.getElementById('resetBtn').style.display = "none";
+    }
+
+    // Search Function (Pehle wala hi)
     function filterTable() {
         let input = document.getElementById("searchBox");
         let filter = input.value.toLowerCase();
         let table = document.getElementById("khataTable");
         let tr = table.getElementsByTagName("tr");
-
         for (let i = 1; i < tr.length; i++) {
-            let td = tr[i].getElementsByTagName("td")[1]; // Name column
+            let td = tr[i].getElementsByTagName("td")[1];
             if (td) {
                 let txtValue = td.textContent || td.innerText;
-                if (txtValue.toLowerCase().indexOf(filter) > -1) {
-                    tr[i].style.display = "";
-                } else {
-                    tr[i].style.display = "none";
-                }
+                tr[i].style.display = (txtValue.toLowerCase().indexOf(filter) > -1) ? "" : "none";
             }       
         }
     }
