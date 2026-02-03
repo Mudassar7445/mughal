@@ -2,179 +2,110 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Mughal Molding</title>
+    <title>Dashboard | Mughal Molding Center</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
-        body { background-color: #f8f9fa; }
-        .card-box {
-            border-radius: 10px;
-            padding: 20px;
-            color: white;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .bg-sale { background: linear-gradient(45deg, #2ecc71, #27ae60); }
-        .bg-udhaar { background: linear-gradient(45deg, #e74c3c, #c0392b); }
-        .bg-items { background: linear-gradient(45deg, #3498db, #2980b9); }
-        .table-container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        
-        /* Hidden Class for Magic Button */
-        .blur-content { filter: blur(5px); pointer-events: none; opacity: 0.1; }
-        .hidden-content { display: none !important; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
+        .sidebar { width: 260px; height: 100vh; background: #1e293b; color: white; position: fixed; }
+        .main { margin-left: 260px; padding: 30px; }
+        .nav-link { color: #94a3b8; padding: 12px 20px; border-radius: 8px; margin: 5px 15px; display: block; text-decoration: none; }
+        .nav-link:hover, .nav-link.active { background: #334155; color: white; }
+        .stat-card { border: none; border-radius: 15px; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="#">Mughal Molding Center</a>
-        <div class="d-flex gap-2">
-            <button onclick="toggleDashboard()" id="hideBtn" class="btn btn-warning btn-sm fw-bold">
-                👁️ Hide Data
-            </button>
-            <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
-        </div>
+<div class="sidebar">
+    <div class="p-4 mb-3 text-center border-bottom border-secondary">
+        <h4 class="fw-bold text-white mb-0">Mughal Molding</h4>
+        <small class="text-muted">Admin Panel</small>
     </div>
-</nav>
-
-<div class="container">
-    <div class="row mb-4">
-        <div class="col-md-12 text-center">
-            <h3>Assalam-o-Alaikum, Mudassar Bhai! 👋</h3>
-            <p class="text-muted"><%= date %></p>
-            
-            <div class="d-flex justify-content-center gap-2 mt-3">
-                <a href="/billing" class="btn btn-primary btn-lg shadow"><i class="bi bi-receipt"></i> New Bill</a>
-                <a href="/customer_khata" class="btn btn-dark btn-lg shadow"><i class="bi bi-book"></i> Khata Register</a>
-                <a href="/inventory" class="btn btn-success btn-lg shadow"><i class="bi bi-box-seam"></i> Stock</a>
-            </div>
-        </div>
-    </div>
-
-    <div id="secret-data">
-        <div class="row text-center">
-            <div class="col-md-4">
-                <div class="card-box bg-sale">
-                    <h3>Rs. <%= daily_sale %></h3>
-                    <h6>Aaj Ki Sale</h6>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card-box bg-udhaar">
-                    <h3>Rs. <%= total_udhaar %></h3>
-                    <h6>Total Udhaar (Market)</h6>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card-box bg-items">
-                    <h3>Checking...</h3>
-                    <h6>Total Stock Items</h6>
-                </div>
-            </div>
-        </div>
-
-        <div class="row mt-4">
-            <div class="col-md-6 mb-3">
-                <div class="table-container">
-                    <h5 class="border-bottom pb-2 mb-3">🧾 Recent Bills</h5>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Total</th>
-                                    <th>Remaining</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% if(recent_bills.length > 0) { %>
-                                    <% recent_bills.forEach(bill => { %>
-                                        <tr>
-                                            <td>#<%= bill.id %></td>
-                                            <td><%= bill.customer_name %></td>
-                                            <td class="text-success fw-bold"><%= bill.total_amount %></td>
-                                            <td class="text-danger"><%= bill.remaining_balance %></td>
-                                        </tr>
-                                    <% }) %>
-                                <% } else { %>
-                                    <tr><td colspan="4" class="text-center">Koi Bill Nahi.</td></tr>
-                                <% } %>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="text-end mt-2">
-                        <a href="/bill_history" class="btn btn-sm btn-outline-primary">View All History</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="table-container">
-                    <h5 class="border-bottom pb-2 mb-3">📖 Recent Khata Entries</h5>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Name</th>
-                                    <th>Details</th>
-                                    <th>Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% if(recent_khata.length > 0) { %>
-                                    <% recent_khata.forEach(k => { %>
-                                        <tr>
-                                            <td><%= k.entry_date %></td>
-                                            <td><%= k.customer_name %></td>
-                                            <td><%= k.khata_details %></td>
-                                            <td class="text-danger fw-bold"><%= k.balance_amount %></td>
-                                        </tr>
-                                    <% }) %>
-                                <% } else { %>
-                                    <tr><td colspan="4" class="text-center">Koi Entry Nahi.</td></tr>
-                                <% } %>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="text-end mt-2">
-                        <a href="/customer_khata" class="btn btn-sm btn-outline-dark">Open Register</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div> <div id="hidden-msg" style="display: none;" class="text-center mt-5">
-        <h2 class="text-muted"><i class="bi bi-eye-slash"></i><br>Data Hidden for Privacy</h2>
-        <p>Button dabayen wapis dekhne ke liye.</p>
-    </div>
-
+    <nav class="nav flex-column">
+        <a href="/" class="nav-link active"><i class="bi bi-grid-fill me-2"></i> Dashboard</a>
+        <a href="/billing" class="nav-link"><i class="bi bi-receipt me-2"></i> New Billing</a>
+        <a href="/bill_history" class="nav-link"><i class="bi bi-clock-history me-2"></i> Bill History</a>
+        <a href="/customer_khata" class="nav-link text-warning fw-bold"><i class="bi bi-journal-text me-2"></i> Detailed Khata</a>
+        <a href="/inventory" class="nav-link"><i class="bi bi-box-seam me-2"></i> Stock Control</a>
+        <a href="/customers" class="nav-link"><i class="bi bi-person-rolodex me-2"></i> Khata Register</a>
+        <hr class="mx-3 border-secondary">
+        <a href="/logout" class="nav-link text-danger"><i class="bi bi-box-arrow-right me-2"></i> Logout</a>
+    </nav>
 </div>
 
-<script>
-    function toggleDashboard() {
-        const dataDiv = document.getElementById('secret-data');
-        const msgDiv = document.getElementById('hidden-msg');
-        const btn = document.getElementById('hideBtn');
+<div class="main">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark">Business Overview</h2>
+        <div class="text-muted"><%= date %></div>
+    </div>
 
-        if (dataDiv.style.display === "none") {
-            // Show Data
-            dataDiv.style.display = "block";
-            msgDiv.style.display = "none";
-            btn.innerHTML = "👁️ Hide Data";
-            btn.classList.replace("btn-success", "btn-warning");
-        } else {
-            // Hide Data
-            dataDiv.style.display = "none";
-            msgDiv.style.display = "block";
-            btn.innerHTML = "🔓 Show Data";
-            btn.classList.replace("btn-warning", "btn-success");
-        }
-    }
-</script>
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card stat-card p-4 border-start border-primary border-5">
+                <small class="text-muted fw-bold">DAILY SALE (TODAY)</small>
+                <h3 class="fw-bold mb-0">Rs. <%= Number(daily_sale).toLocaleString() %></h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card p-4 border-start border-success border-5">
+                <small class="text-muted fw-bold">MONTHLY SALE</small>
+                <h3 class="fw-bold mb-0">Rs. <%= Number(monthly_sale).toLocaleString() %></h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card p-4 border-start border-danger border-5">
+                <small class="text-muted fw-bold">TOTAL UDHAAR (DETAILED)</small>
+                <h3 class="fw-bold mb-0 text-danger">Rs. <%= Number(total_udhaar).toLocaleString() %></h3>
+            </div>
+        </div>
+    </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card p-3 shadow-sm h-100">
+                <h5 class="fw-bold mb-3"><i class="bi bi-receipt me-2 text-primary"></i> Recent Bills</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr class="small text-muted"><th>Bill #</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead>
+                        <tbody>
+                            <% recent_bills.forEach(bill => { %>
+                                <tr>
+                                    <td>#<%= bill.id %></td>
+                                    <td class="fw-bold"><%= bill.customer_name %></td>
+                                    <td><%= Number(bill.total_amount).toLocaleString() %></td>
+                                    <td>
+                                        <span class="badge <%= bill.remaining_balance > 0 ? 'bg-danger-subtle text-danger' : 'bg-success-subtle text-success' %>">
+                                            <%= bill.remaining_balance > 0 ? 'Pending' : 'Paid' %>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card p-3 shadow-sm h-100">
+                <h5 class="fw-bold mb-3"><i class="bi bi-journal-text me-2 text-warning"></i> Recent Khata Entries</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr class="small text-muted"><th>Customer</th><th>Balance</th><th>Date</th></tr></thead>
+                        <tbody>
+                            <% recent_khata.forEach(entry => { %>
+                                <tr>
+                                    <td class="fw-bold"><%= entry.customer_name %></td>
+                                    <td class="text-danger fw-bold"><%= Number(entry.balance_amount).toLocaleString() %></td>
+                                    <td><%= entry.entry_date %></td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
