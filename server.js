@@ -65,7 +65,6 @@ app.get("/", requireAuth, async (req, res) => {
     }
 });
 
-// --- KHATA ROUTES ---
 app.get("/customer_khata", requireAuth, async (req, res) => {
     try {
         const history = await db.execute("SELECT * FROM customers_detailed_khata ORDER BY id DESC");
@@ -91,7 +90,22 @@ app.post("/customer_khata", requireAuth, async (req, res) => {
     }
 });
 
-// --- DELETE KHATA ROUTE (YE ZAROORI HAI) ---
+// --- UPDATE KHATA ---
+app.post("/update_khata", requireAuth, async (req, res) => {
+    const { id, customer_name, customer_phone, khata_details, total_amount, paid_amount, entry_date } = req.body;
+    const balance = parseFloat(total_amount) - parseFloat(paid_amount); 
+    try {
+        await db.execute({
+            sql: "UPDATE customers_detailed_khata SET customer_name=?, customer_phone=?, khata_details=?, total_amount=?, paid_amount=?, balance_amount=?, entry_date=? WHERE id=?",
+            args: [customer_name, customer_phone, khata_details, total_amount, paid_amount, balance, entry_date, id]
+        });
+        res.redirect("/customer_khata");
+    } catch (e) {
+        res.send(`<h3>Update Error:</h3><p>${e.message}</p>`);
+    }
+});
+
+// --- SINGLE DELETE ---
 app.get("/delete_khata/:id", requireAuth, async (req, res) => {
     try {
         await db.execute({
@@ -100,11 +114,22 @@ app.get("/delete_khata/:id", requireAuth, async (req, res) => {
         });
         res.redirect("/customer_khata");
     } catch (e) {
-        res.send(`<h3>Error Deleting:</h3><p>${e.message}</p><a href='/customer_khata'>Go Back</a>`);
+        res.send(`<h3>Error Deleting:</h3><p>${e.message}</p>`);
     }
 });
 
-// --- BAAKI ROUTES ---
+// --- DELETE ALL KHATA (DANGER ROUTE) ---
+// Ye wo route hai jo sab kuch saaf kar dega
+app.get("/delete_all_khata_confirm", requireAuth, async (req, res) => {
+    try {
+        await db.execute("DELETE FROM customers_detailed_khata");
+        res.redirect("/customer_khata");
+    } catch (e) {
+        res.send(`<h3>Error Deleting All:</h3><p>${e.message}</p>`);
+    }
+});
+// ---------------------------------------
+
 app.get("/add_customer", requireAuth, (req, res) => res.render("add_customer"));
 app.post("/add_customer", requireAuth, async (req, res) => {
     const name = req.body.name || "Unknown";
@@ -177,12 +202,6 @@ app.get("/bill_history", requireAuth, async (req, res) => {
     const query = req.query.query || "";
     const result = await db.execute({ sql: "SELECT * FROM khata_records WHERE customer_name LIKE ? OR id = ? ORDER BY id DESC", args: [`%${query}%`, query] });
     res.render("bill_history", { bills: result.rows, query });
-});
-app.post("/update_khata", requireAuth, async (req, res) => {
-    const { id, customer_name, customer_phone, khata_details, total_amount, paid_amount, entry_date } = req.body;
-    const balance = parseFloat(total_amount) - parseFloat(paid_amount); 
-    await db.execute({ sql: "UPDATE customers_detailed_khata SET customer_name=?, customer_phone=?, khata_details=?, total_amount=?, paid_amount=?, balance_amount=?, entry_date=? WHERE id=?", args: [customer_name, customer_phone, khata_details, total_amount, paid_amount, balance, entry_date, id] });
-    res.redirect("/customer_khata");
 });
 app.get("/customers", requireAuth, async (req, res) => {
     const records = await db.execute("SELECT * FROM khata_records ORDER BY id DESC");

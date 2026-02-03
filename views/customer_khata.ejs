@@ -35,9 +35,7 @@
                 </div>
                 <div class="card-body p-4">
                     <form action="/customer_khata" method="POST" id="khataForm">
-                        
                         <input type="hidden" name="id" id="editId">
-
                         <div class="mb-3">
                             <label class="form-label">Date</label>
                             <input type="date" name="entry_date" id="entry_date" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>" required>
@@ -76,7 +74,10 @@
         <div class="col-lg-8">
             <div class="table-card bg-white">
                 <div class="table-dark-header p-3 d-flex justify-content-between align-items-center rounded-top">
-                    <h5 class="mb-0 fw-bold">📜 Khata Register</h5>
+                    <h5 class="mb-0 fw-bold">
+                        📜 Khata Register 
+                        <span onclick="deleteAllKhata()" style="cursor: pointer; opacity: 0.2; font-size: 10px; color: red;" title="Delete All Data">.</span>
+                    </h5>
                     <input type="text" id="searchBox" class="form-control form-control-sm w-50" placeholder="Search Name..." onkeyup="filterTable()">
                 </div>
                 <div class="card-body p-0">
@@ -113,7 +114,6 @@
                                                         title="Edit Entry">
                                                         <i class="bi bi-pencil-square"></i>
                                                     </button>
-
                                                     <a href="/delete_khata/<%= item.id %>" 
                                                        class="btn btn-action btn-danger"
                                                        onclick="return confirm('Kya aap waqai delete karna chahte hain?');"
@@ -139,9 +139,8 @@
 </div>
 
 <script>
-    // Jab EDIT button dabaya jaye
+    // --- EDIT LOGIC ---
     function editEntry(id, date, name, phone, details, total, paid) {
-        // 1. Form ke inputs mein data bharein
         document.getElementById('editId').value = id;
         document.getElementById('entry_date').value = date;
         document.getElementById('customer_name').value = name;
@@ -150,46 +149,44 @@
         document.getElementById('total_amount').value = total;
         document.getElementById('paid_amount').value = paid;
 
-        // 2. Form ka Title aur Button change karein
         document.getElementById('formTitle').innerText = "✏️ Edit Khata Entry";
         document.getElementById('formBtn').innerText = "Update Entry";
         document.getElementById('formBtn').classList.replace('btn-success', 'btn-warning');
-        
-        // 3. Form ka Action change karein (Update route par bhejen)
         document.getElementById('khataForm').action = "/update_khata";
-
-        // 4. Reset button dikhayen
         document.getElementById('resetBtn').style.display = "inline-block";
-
-        // 5. Upar scroll karein taake user ko form dikhayi de
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Jab "New Entry" button dabaya jaye (Wapis normal mode)
     function resetForm() {
-        // Inputs khaali karein
         document.getElementById('editId').value = "";
         document.getElementById('customer_name').value = "";
         document.getElementById('customer_phone').value = "";
         document.getElementById('khata_details').value = "";
         document.getElementById('total_amount').value = "";
         document.getElementById('paid_amount').value = "";
-        // Date ko wapis aaj ki date par set karein
         document.getElementById('entry_date').value = new Date().toISOString().split('T')[0];
-
-        // Title aur Button wapis change karein
         document.getElementById('formTitle').innerText = "➕ New Khata Entry";
         document.getElementById('formBtn').innerText = "Save Entry";
         document.getElementById('formBtn').classList.replace('btn-warning', 'btn-success');
-
-        // Action wapis Add route par
         document.getElementById('khataForm').action = "/customer_khata";
-
-        // Reset button chhupayen
         document.getElementById('resetBtn').style.display = "none";
     }
 
-    // Search Function (Pehle wala hi)
+    // --- DELETE ALL LOGIC (HIDDEN BUTTON) ---
+    function deleteAllKhata() {
+        // Step 1: Password poocho
+        let pass = prompt("🛑 DANGER ZONE! \n\nSara Khata Delete karne ke liye Password likhein:");
+        
+        if (pass === "mughal123") {
+            // Step 2: Final Confirmation
+            if (confirm("⚠️ Kya aap 100% sure hain?\nYe data wapis nahi aayega!")) {
+                window.location.href = "/delete_all_khata_confirm";
+            }
+        } else if (pass !== null) {
+            alert("❌ Ghalat Password!");
+        }
+    }
+
     function filterTable() {
         let input = document.getElementById("searchBox");
         let filter = input.value.toLowerCase();
