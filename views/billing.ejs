@@ -6,80 +6,80 @@
     <title>Billing - Mughal Molding</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f4f6f9; }
-        .bill-container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .total-section { background: #e9ecef; padding: 15px; border-radius: 5px; font-weight: bold; }
-        
-        /* Print Styling */
+        body { background-color: #f8f9fa; }
+        .bill-header { background: #2c3e50; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .total-section { background: #e9ecef; padding: 20px; border-radius: 5px; font-weight: bold; font-size: 1.2rem; }
+        /* Print ke liye khaas setting */
         @media print {
-            body * { visibility: hidden; }
-            #printableArea, #printableArea * { visibility: visible; }
-            #printableArea { position: absolute; left: 0; top: 0; width: 100%; }
             .no-print { display: none !important; }
+            .bill-header { color: black !important; background: none !important; }
+            body { background: white; }
         }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-dark bg-primary mb-4 no-print">
-    <div class="container">
-        <a class="navbar-brand" href="/">Mughal Molding</a>
-        <a href="/" class="btn btn-light btn-sm">Dashboard</a>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>🧾 New Bill (Mughal Molding)</h2>
+        <a href="/" class="btn btn-secondary no-print">Back to Dashboard</a>
     </div>
-</nav>
 
-<div class="container">
     <div class="row">
         <div class="col-md-5 no-print">
-            <div class="card p-3 mb-3">
-                <h5>Add Item</h5>
-                <select id="product_select" class="form-select mb-2" onchange="updatePrice()">
-                    <option value="" data-price="0">Select Product...</option>
-                    <% products.forEach(p => { %>
-                        <option value="<%= p.id %>" data-name="<%= p.item_name %>" data-price="<%= p.price %>" data-stock="<%= p.stock %>" data-feet="<%= p.feet %>">
-                            <%= p.item_name %> (Stock: <%= p.stock %>)
-                        </option>
-                    <% }) %>
-                </select>
+            <div class="card p-3 shadow-sm">
+                <h4>Add Item</h4>
                 
+                <div class="mb-2">
+                    <label>Select Product</label>
+                    <select id="product_select" class="form-control" onchange="updatePrice()">
+                        <option value="" data-price="0" data-feet="0">Select...</option>
+                        <% products.forEach(p => { %>
+                            <option value="<%= p.id %>" data-price="<%= p.price %>" data-feet="<%= p.feet %>" data-name="<%= p.item_name %>">
+                                <%= p.item_name %> (Stock: <%= p.stock %>)
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+
                 <div class="row">
-                    <div class="col-6">
-                        <input type="number" id="qty" class="form-control mb-2" placeholder="Quantity (Nagg)" min="1" value="1">
+                    <div class="col-6 mb-2">
+                        <label>Quantity (Nag)</label>
+                        <input type="number" id="qty" class="form-control" value="1" min="1" oninput="calculateItemTotal()">
                     </div>
-                    <div class="col-6">
-                        <input type="number" id="feet" class="form-control mb-2" placeholder="Feet (Optional)">
+                    <div class="col-6 mb-2">
+                        <label>Feet (Per Nag)</label>
+                        <input type="number" id="feet" class="form-control" value="0" step="0.1" oninput="calculateItemTotal()">
                     </div>
                 </div>
-                
-                <input type="number" id="custom_price" class="form-control mb-2" placeholder="Price (per item)">
-                <button onclick="addItem()" class="btn btn-success w-100">Add to Bill</button>
-            </div>
-            
-            <div class="d-grid gap-2">
-                <button onclick="clearBill()" class="btn btn-warning text-white">
-                    🧹 Naya Bill (Clear)
-                </button>
+
+                <div class="mb-2">
+                    <label>Price (Per Foot/Item)</label>
+                    <input type="number" id="price" class="form-control" value="0" oninput="calculateItemTotal()">
+                </div>
+
+                <div class="mb-3">
+                    <label>Total Item Price</label>
+                    <input type="text" id="item_total" class="form-control" readonly>
+                </div>
+
+                <button class="btn btn-primary w-100" onclick="addItem()">Add to Bill ⬇️</button>
             </div>
         </div>
 
         <div class="col-md-7">
-            <div id="printableArea" class="bill-container">
-                <div class="text-center mb-3">
-                    <h3>Mughal Molding</h3>
-                    <p>Bill Receipt</p>
-                </div>
-                
+            <div class="card p-3 shadow-sm">
                 <div class="row mb-3">
                     <div class="col-6">
-                        <input type="text" id="customer_name" class="form-control" placeholder="Customer Name">
+                        <input type="text" id="c_name" class="form-control" placeholder="Customer Name">
                     </div>
                     <div class="col-6">
-                        <input type="text" id="customer_phone" class="form-control" placeholder="Phone Number">
+                        <input type="number" id="c_phone" class="form-control" placeholder="Phone Number">
                     </div>
                 </div>
 
                 <table class="table table-bordered">
-                    <thead>
+                    <thead class="table-dark">
                         <tr>
                             <th>Item</th>
                             <th>Qty</th>
@@ -89,7 +89,7 @@
                             <th class="no-print">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="bill_items">
+                    <tbody id="bill_body">
                         </tbody>
                 </table>
 
@@ -98,19 +98,21 @@
                         <span>Grand Total:</span>
                         <span id="grand_total">0</span>
                     </div>
-                    <div class="d-flex justify-content-between mt-2 align-items-center">
+                    <div class="d-flex justify-content-between mt-2">
                         <span>Advance / Paid:</span>
-                        <input type="number" id="advance" class="form-control form-control-sm w-25" value="0" oninput="calculateBalance()">
+                        <input type="number" id="advance" class="form-control w-25 no-print" value="0" oninput="updateBalance()">
+                        <span class="d-none d-print-block" id="print_advance">0</span>
                     </div>
                     <div class="d-flex justify-content-between mt-2 text-danger">
                         <span>Remaining (Udhaar):</span>
                         <span id="remaining">0</span>
                     </div>
                 </div>
-                
-                <div class="mt-3 text-center no-print">
-                    <button onclick="window.print()" class="btn btn-secondary me-2">Print Bill</button>
-                    <button onclick="saveKhata()" class="btn btn-primary">Save to Khata</button>
+
+                <div class="mt-3 no-print d-flex gap-2">
+                    <button class="btn btn-success flex-grow-1" id="saveBtn" onclick="saveBill()">💾 Save to Khata</button>
+                    <button class="btn btn-dark" onclick="window.print()">🖨️ Print</button>
+                    <button class="btn btn-warning" onclick="clearBill()">🔄 New Bill / Clear</button>
                 </div>
             </div>
         </div>
@@ -119,45 +121,48 @@
 
 <script>
     let cart = [];
-    
+
     function updatePrice() {
-        const select = document.getElementById('product_select');
-        const price = select.options[select.selectedIndex].getAttribute('data-price');
-        document.getElementById('custom_price').value = price;
+        const select = document.getElementById("product_select");
+        const option = select.options[select.selectedIndex];
+        document.getElementById("price").value = option.getAttribute("data-price");
+        document.getElementById("feet").value = option.getAttribute("data-feet");
+        calculateItemTotal();
+    }
+
+    function calculateItemTotal() {
+        const qty = parseFloat(document.getElementById("qty").value) || 0;
+        const feet = parseFloat(document.getElementById("feet").value) || 0;
+        const price = parseFloat(document.getElementById("price").value) || 0;
+        
+        // Agar feet hain to (Qty * Feet * Price), warna seedha (Qty * Price)
+        let total = 0;
+        if (feet > 0) {
+            total = qty * feet * price;
+        } else {
+            total = qty * price;
+        }
+        document.getElementById("item_total").value = Math.round(total);
     }
 
     function addItem() {
-        const select = document.getElementById('product_select');
+        const select = document.getElementById("product_select");
         const id = select.value;
-        if (!id) return alert("Select a product first!");
+        const name = select.options[select.selectedIndex].getAttribute("data-name");
+        const qty = parseFloat(document.getElementById("qty").value);
+        const feet = parseFloat(document.getElementById("feet").value);
+        const price = parseFloat(document.getElementById("price").value);
+        const total = parseFloat(document.getElementById("item_total").value);
 
-        const name = select.options[select.selectedIndex].getAttribute('data-name');
-        const qty = parseFloat(document.getElementById('qty').value) || 0;
-        const feet = parseFloat(document.getElementById('feet').value) || 0;
-        const price = parseFloat(document.getElementById('custom_price').value) || 0;
-        
-        // Total Calculation logic
-        // Agar Feet dale hain to Feet * Qty * Price, warna sirf Qty * Price
-        // (Aap apne hisab se logic change kar sakte hain)
-        let total = 0;
-        if (feet > 0) {
-            total = price * feet * qty; // Example logic
-        } else {
-            total = price * qty;
-        }
+        if (!id) return alert("Product select karein!");
 
         cart.push({ id, name, qty, feet, price, total });
         renderCart();
     }
 
-    function removeItem(index) {
-        cart.splice(index, 1);
-        renderCart();
-    }
-
     function renderCart() {
-        const tbody = document.getElementById('bill_items');
-        tbody.innerHTML = '';
+        const tbody = document.getElementById("bill_body");
+        tbody.innerHTML = "";
         let grandTotal = 0;
 
         cart.forEach((item, index) => {
@@ -166,70 +171,72 @@
                 <tr>
                     <td>${item.name}</td>
                     <td>${item.qty}</td>
-                    <td>${item.feet || '-'}</td>
+                    <td>${item.feet > 0 ? item.feet : '-'}</td>
                     <td>${item.price}</td>
                     <td>${item.total}</td>
-                    <td class="no-print">
-                        <button onclick="removeItem(${index})" class="btn btn-danger btn-sm">X</button>
-                    </td>
+                    <td class="no-print"><button class="btn btn-sm btn-danger" onclick="removeItem(${index})">X</button></td>
                 </tr>
             `;
         });
 
-        document.getElementById('grand_total').innerText = grandTotal;
-        calculateBalance();
+        document.getElementById("grand_total").innerText = grandTotal;
+        updateBalance();
     }
 
-    function calculateBalance() {
-        const total = parseFloat(document.getElementById('grand_total').innerText) || 0;
-        const advance = parseFloat(document.getElementById('advance').value) || 0;
-        document.getElementById('remaining').innerText = total - advance;
+    function removeItem(index) {
+        cart.splice(index, 1);
+        renderCart();
     }
 
-    // --- YE HAI WO FUNCTION JO CHANGE KIYA HAI ---
-    async function saveKhata() {
-        const name = document.getElementById('customer_name').value;
-        const phone = document.getElementById('customer_phone').value;
+    function updateBalance() {
+        const total = parseFloat(document.getElementById("grand_total").innerText);
+        const advance = parseFloat(document.getElementById("advance").value) || 0;
+        document.getElementById("remaining").innerText = total - advance;
         
-        if (!name || cart.length === 0) return alert("Customer Name aur Items add karein!");
+        // Print ke liye advance update
+        document.getElementById("print_advance").innerText = advance;
+    }
 
-        const total = parseFloat(document.getElementById('grand_total').innerText);
-        const advance = parseFloat(document.getElementById('advance').value);
-        const remaining = parseFloat(document.getElementById('remaining').innerText);
+    // --- MAIN FUNCTION JIS MEIN CHANGE KIYA HAI ---
+    async function saveBill() {
+        const name = document.getElementById("c_name").value;
+        const phone = document.getElementById("c_phone").value;
+        const total = document.getElementById("grand_total").innerText;
+        const advance = document.getElementById("advance").value;
+        const remaining = document.getElementById("remaining").innerText;
 
-        const data = {
-            name, phone, total, advance, remaining,
-            items: JSON.stringify(cart)
-        };
+        if (!name || cart.length === 0) return alert("Naam aur Items zaroori hain!");
+
+        document.getElementById("saveBtn").innerText = "Saving...";
+        document.getElementById("saveBtn").disabled = true;
 
         try {
             const res = await fetch('/save_khata', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                body: JSON.stringify({ name, phone, total, advance, remaining, items: JSON.stringify(cart) })
             });
             const result = await res.json();
-
-            if (result.status === 'success') {
-                alert("✅ Bill Save Ho Gaya! (Screen clear nahi hui)");
-                // Maine yahan se 'clearBill()' hata diya hai.
-                // Ab bill screen par hi rahega.
+            
+            if (result.status === "success") {
+                alert("✅ Bill Save Ho Gaya!");
+                // YAHAN SE 'RELOAD' HATA DIYA HAI.
+                document.getElementById("saveBtn").innerText = "Saved ✅";
+                // Ab bill screen par hi rahega jab tak aap 'New Bill' nahi dabate.
             } else {
                 alert("Error: " + result.message);
+                document.getElementById("saveBtn").disabled = false;
+                document.getElementById("saveBtn").innerText = "💾 Save to Khata";
             }
-        } catch (error) {
-            alert("Network Error!");
+        } catch (e) {
+            alert("Error saving bill");
+            document.getElementById("saveBtn").disabled = false;
         }
     }
 
-    // Naya button banaya hai jo manually clear karega
     function clearBill() {
-        if(confirm("Kya aap waqai Naya Bill banana chahte hain? Purana data saaf ho jaye ga.")) {
-            cart = [];
-            document.getElementById('customer_name').value = '';
-            document.getElementById('customer_phone').value = '';
-            document.getElementById('advance').value = '0';
-            renderCart();
+        if(confirm("Screen saaf karni hai? Data save nahi hua to zaya ho jaye ga!")) {
+            window.location.reload();
         }
     }
 </script>
