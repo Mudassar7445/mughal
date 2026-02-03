@@ -19,39 +19,39 @@
 <div class="container">
     <div class="row">
         <div class="col-md-4 mb-4">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">➕ New Khata Entry</h5>
                 </div>
                 <div class="card-body">
                     <form action="/customer_khata" method="POST">
                         <div class="mb-2">
-                            <label>Date</label>
+                            <label class="small fw-bold">Date</label>
                             <input type="date" name="entry_date" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>" required>
                         </div>
                         <div class="mb-2">
-                            <label>Customer Name</label>
+                            <label class="small fw-bold">Customer Name</label>
                             <input type="text" name="customer_name" class="form-control" placeholder="Naam likhein" required>
                         </div>
                         <div class="mb-2">
-                            <label>Phone</label>
+                            <label class="small fw-bold">Phone</label>
                             <input type="text" name="customer_phone" class="form-control" placeholder="Mobile Number">
                         </div>
                         <div class="mb-2">
-                            <label>Details (Samaan)</label>
+                            <label class="small fw-bold">Details (Samaan)</label>
                             <textarea name="khata_details" class="form-control" rows="2" placeholder="Kya samaan liya?"></textarea>
                         </div>
                         <div class="row">
                             <div class="col-6 mb-2">
-                                <label>Total Amount</label>
+                                <label class="small fw-bold">Total Amount</label>
                                 <input type="number" name="total_amount" class="form-control" placeholder="0">
                             </div>
                             <div class="col-6 mb-2">
-                                <label>Paid (Wasool)</label>
+                                <label class="small fw-bold">Paid (Wasool)</label>
                                 <input type="number" name="paid_amount" class="form-control" placeholder="0">
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-success w-100 mt-2">Save Entry</button>
+                        <button type="submit" class="btn btn-success w-100 mt-2 fw-bold">Save Entry</button>
                     </form>
                 </div>
             </div>
@@ -68,12 +68,12 @@
                     <input type="text" id="searchBox" class="form-control form-control-sm w-50" placeholder="Search Name..." onkeyup="filterTable()">
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
                         <table class="table table-striped table-hover mb-0" id="khataTable">
                             <thead class="table-dark sticky-top">
                                 <tr>
                                     <th>Date</th>
-                                    <th>Name</th>
+                                    <th>Name/Phone</th>
                                     <th>Details</th>
                                     <th>Total</th>
                                     <th>Paid</th>
@@ -84,24 +84,28 @@
                                 <% if (history.length > 0) { %>
                                     <% history.forEach(item => { %>
                                         <tr>
-                                            <td><%= item.entry_date %></td>
-                                            <td class="fw-bold"><%= item.customer_name %> <br> <small class="text-muted"><%= item.customer_phone %></small></td>
-                                            <td><%= item.khata_details %></td>
-                                            <td class="text-primary"><%= item.total_amount %></td>
-                                            <td class="text-success"><%= item.paid_amount %></td>
+                                            <td class="small"><%= item.entry_date %></td>
+                                            <td>
+                                                <strong><%= item.customer_name %></strong><br>
+                                                <small class="text-muted"><%= item.customer_phone %></small>
+                                            </td>
+                                            <td class="small"><%= item.khata_details %></td>
+                                            <td class="text-primary fw-bold"><%= item.total_amount %></td>
+                                            <td class="text-success fw-bold"><%= item.paid_amount %></td>
                                             <td class="text-danger fw-bold"><%= item.balance_amount %></td>
                                             <td>
                                                 <a href="/delete_khata/<%= item.id %>" 
-                                                   class="btn btn-sm btn-danger"
-                                                   onclick="return confirm('Kya aap waqai ye entry delete karna chahte hain?');">
-                                                    <i class="bi bi-trash"></i> Del
+                                                   class="btn btn-sm btn-danger py-0 px-2"
+                                                   onclick="return confirm('Delete kar du?');"
+                                                   title="Delete Entry">
+                                                    🗑️
                                                 </a>
                                             </td>
                                         </tr>
                                     <% }) %>
                                 <% } else { %>
                                     <tr>
-                                        <td colspan="7" class="text-center text-muted">Koi Khata Entry Nahi Hai.</td>
+                                        <td colspan="7" class="text-center text-muted py-3">Abhi tak koi khata nahi hai.</td>
                                     </tr>
                                 <% } %>
                             </tbody>
