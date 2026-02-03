@@ -3,16 +3,14 @@ const session = require("express-session");
 const bodyParser = require("body-parser");
 const path = require("path");
 
-// --- DATABASE CONNECTION (THE FINAL FIX) ---
-// Hum '/web' use kar rahe hain. Ye Vercel ke liye bana hai.
-// Ye 'Migration Jobs' error ko jar (root) se khatam kar dega.
+// --- DATABASE CONNECTION ---
+// Hum '/web' use kar rahe hain taake Vercel par connection na toote
 const { createClient } = require("@libsql/client/web");
 
 const db = createClient({
   url: "https://mughal-db-mudassar7445.aws-ap-south-1.turso.io",
   authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzAwNTEyMzEsImlkIjoiOGJlZDE1YWItOWUyNy00MjRiLThjYzMtNmFjN2NiZTIzY2UxIiwicmlkIjoiMjY1YjNiMTgtZDA1YS00OTUxLWI2YzktMDMzYzNlZjFhNjJiIn0.zVBC046n-Ngq-_DGweCU8iHp_gUJDTZUMqJPQzRcgdLhYrq3ID6ltbj8n0HvwvsgnoLbLOWUK7vujFlc7vjvDA"
 });
-// -------------------------------------------
 
 const app = express();
 
@@ -50,10 +48,9 @@ app.get("/logout", (req, res) => {
     res.redirect("/login");
 });
 
-// --- DASHBOARD (OPTIMIZED / TEZ WALA) ---
+// --- DASHBOARD ---
 app.get("/", requireAuth, async (req, res) => {
     const today = new Date().toISOString().split("T")[0];
-
     try {
         const [daily, udhaar, bills, khata] = await Promise.all([
             db.execute({ sql: "SELECT SUM(total_amount) as total FROM khata_records WHERE date(created_at) = ?", args: [today] }),
@@ -76,55 +73,74 @@ app.get("/", requireAuth, async (req, res) => {
     }
 });
 
-// --- NEW CUSTOMER / OPEN KHATA ROUTES ---
+// --- NEW CUSTOMER (WITH ERROR FIX) ---
 app.get("/add_customer", requireAuth, (req, res) => {
     res.render("add_customer");
 });
 
 app.post("/add_customer", requireAuth, async (req, res) => {
     const { name, phone, address, opening_balance, date } = req.body;
+    
+    // Safety: Agar balance khali ho to 0 manein
+    const balanceVal = parseFloat(opening_balance) || 0;
+
     try {
+        // 1. Check karein banda pehle se hai ya nahi
         const check = await db.execute({
             sql: "SELECT * FROM customers WHERE name = ? AND phone = ?",
             args: [name, phone]
         });
+
         if (check.rows.length === 0) {
+            // Naya banda
             await db.execute({
                 sql: "INSERT INTO customers (name, phone, balance) VALUES (?, ?, ?)",
-                args: [name, phone, opening_balance]
+                args: [name, phone, balanceVal]
             });
         } else {
+            // Purana banda (Balance update)
             await db.execute({
                 sql: "UPDATE customers SET balance = balance + ? WHERE name = ? AND phone = ?",
-                args: [opening_balance, name, phone]
+                args: [balanceVal, name, phone]
             });
         }
-        if (parseFloat(opening_balance) > 0) {
+
+        // 2. Agar Udhaar hai to Khata mein likhein
+        if (balanceVal > 0) {
             await db.execute({
                 sql: "INSERT INTO customers_detailed_khata (customer_name, customer_phone, customer_address, khata_details, total_amount, paid_amount, balance_amount, entry_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                args: [name, phone, address, "Opening Balance (Purana Khata)", opening_balance, 0, opening_balance, date]
+                args: [name, phone, address, "Opening Balance (Purana Khata)", balanceVal, 0, balanceVal, date]
             });
         }
         res.redirect("/customer_khata"); 
     } catch (e) {
         console.error(e);
-        res.send("Error saving customer: " + e.message);
+        // Loading ki bajaye Error dikhaye ga
+        res.send(`<h2>Error Saving Customer:</h2><p>${e.message}</p><br><a href='/add_customer'>Wapis Jayen</a>`);
     }
 });
 
 // --- STOCK / INVENTORY ROUTES ---
 app.get("/inventory", requireAuth, async (req, res) => {
-    const result = await db.execute("SELECT * FROM products ORDER BY id DESC");
-    res.render("inventory", { products: result.rows });
+    try {
+        const result = await db.execute("SELECT * FROM products ORDER BY id DESC");
+        res.render("inventory", { products: result.rows });
+    } catch(e) {
+        res.send("Inventory Error: " + e.message);
+    }
 });
 
 app.post("/insert_product", requireAuth, async (req, res) => {
     const { item_name, stock, feet, unit_type } = req.body;
-    await db.execute({
-        sql: "INSERT INTO products (item_name, price, stock, feet, unit_type) VALUES (?, 0, ?, ?, ?)",
-        args: [item_name, stock, feet || 0, unit_type]
-    });
-    res.redirect("/inventory");
+    try {
+        await db.execute({
+            sql: "INSERT INTO products (item_name, price, stock, feet, unit_type) VALUES (?, 0, ?, ?, ?)",
+            args: [item_name, stock, feet || 0, unit_type]
+        });
+        res.redirect("/inventory");
+    } catch(e) {
+        res.send("Insert Product Error: " + e.message);
+    }
 });
 
 app.post("/update_product", requireAuth, async (req, res) => {
@@ -180,28 +196,48 @@ app.get("/bill_history", requireAuth, async (req, res) => {
     res.render("bill_history", { bills: result.rows, query });
 });
 
+// --- CUSTOMER KHATA (YE FIX KIYA HAI) ---
 app.get("/customer_khata", requireAuth, async (req, res) => {
-    const history = await db.execute("SELECT * FROM customers_detailed_khata ORDER BY id DESC");
-    res.render("customer_khata", { history: history.rows, msg: null });
+    try {
+        const history = await db.execute("SELECT * FROM customers_detailed_khata ORDER BY id DESC");
+        res.render("customer_khata", { history: history.rows, msg: null });
+    } catch(e) {
+        res.send("Error loading Khata: " + e.message);
+    }
 });
 
 app.post("/customer_khata", requireAuth, async (req, res) => {
     const { customer_name, customer_phone, customer_address, khata_details, total_amount, paid_amount, entry_date } = req.body;
-    const balance = total_amount - paid_amount;
-    await db.execute({
-        sql: "INSERT INTO customers_detailed_khata (customer_name, customer_phone, customer_address, khata_details, total_amount, paid_amount, balance_amount, entry_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        args: [customer_name, customer_phone, customer_address, khata_details, total_amount, paid_amount, balance, entry_date]
-    });
-    res.redirect("/customer_khata");
+    
+    // Calculations taake NaN na ho
+    const total = parseFloat(total_amount) || 0;
+    const paid = parseFloat(paid_amount) || 0;
+    const balance = total - paid;
+
+    try {
+        await db.execute({
+            sql: "INSERT INTO customers_detailed_khata (customer_name, customer_phone, customer_address, khata_details, total_amount, paid_amount, balance_amount, entry_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            args: [customer_name, customer_phone, customer_address, khata_details, total, paid, balance, entry_date]
+        });
+        res.redirect("/customer_khata");
+    } catch (e) {
+        console.error(e);
+        // Loading khatam aur Error screen par
+        res.send(`<h2>Error Saving Khata Entry:</h2><p>${e.message}</p><br><a href='/customer_khata'>Wapis Jayen</a>`);
+    }
 });
 
 app.post("/update_khata", requireAuth, async (req, res) => {
     const { id, customer_name, customer_phone, khata_details, total_amount, paid_amount, entry_date } = req.body;
-    const balance = total_amount - paid_amount; 
+    
+    const total = parseFloat(total_amount) || 0;
+    const paid = parseFloat(paid_amount) || 0;
+    const balance = total - paid; 
+
     try {
         await db.execute({
             sql: "UPDATE customers_detailed_khata SET customer_name=?, customer_phone=?, khata_details=?, total_amount=?, paid_amount=?, balance_amount=?, entry_date=? WHERE id=?",
-            args: [customer_name, customer_phone, khata_details, total_amount, paid_amount, balance, entry_date, id]
+            args: [customer_name, customer_phone, khata_details, total, paid, balance, entry_date, id]
         });
         res.redirect("/customer_khata");
     } catch (e) {
@@ -211,8 +247,12 @@ app.post("/update_khata", requireAuth, async (req, res) => {
 });
 
 app.get("/customers", requireAuth, async (req, res) => {
-    const records = await db.execute("SELECT * FROM khata_records ORDER BY id DESC");
-    res.render("customers", { records: records.rows });
+    try {
+        const records = await db.execute("SELECT * FROM khata_records ORDER BY id DESC");
+        res.render("customers", { records: records.rows });
+    } catch(e) {
+        res.send("Error loading customers: " + e.message);
+    }
 });
 
 const PORT = process.env.PORT || 3000;
