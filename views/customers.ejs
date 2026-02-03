@@ -2,161 +2,79 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Khata Register | Mughal Molding</title>
+    <title>Saved Bills | Mughal Molding</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        body { background: #f8fafc; font-family: 'Segoe UI', sans-serif; }
-        
-        /* Header Style (Dark Bar) */
-        .khata-header { background: #1e293b; color: white; padding: 20px 0; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        .page-title { font-weight: 700; margin: 0; font-size: 24px; }
-        .btn-back { border: 1px solid rgba(255,255,255,0.2); color: white; padding: 6px 15px; border-radius: 6px; text-decoration: none; transition: 0.3s; font-size: 14px; }
-        .btn-back:hover { background: rgba(255,255,255,0.1); color: white; border-color: white; }
-        .date-badge { font-size: 14px; opacity: 0.9; }
-
-        /* Card & Table Style */
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); background: white; padding: 25px; }
-        .table { margin-bottom: 0; }
-        .table thead th { border-bottom: 2px solid #f1f5f9; color: #1e293b; font-weight: 700; padding: 15px 10px; font-size: 15px; }
-        .table tbody td { padding: 18px 10px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 14px; }
-        
-        /* Text Colors */
-        .customer-name { font-weight: 700; color: #0f172a; font-size: 15px; }
-        .amount-total { font-weight: 500; }
-        .amount-adv { color: #16a34a; font-weight: 600; }
-        .amount-rem { color: #0f172a; font-weight: 700; } /* Screenshot 8 mein Remaining Black bold hai */
-
-        /* View Button */
-        .btn-view { background: #0ea5e9; color: white; border: none; padding: 6px 15px; border-radius: 6px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; transition: 0.2s; }
-        .btn-view:hover { background: #0284c7; color: white; }
-        
-        .time-text { color: #94a3b8; font-size: 13px; }
-    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 </head>
-<body>
+<body class="bg-light">
 
-<div class="khata-header">
+<nav class="navbar navbar-dark bg-dark py-3 mb-4">
     <div class="container d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-3">
-            <a href="/" class="btn-back"><i class="bi bi-arrow-left me-1"></i> Dashboard</a>
-            <h1 class="page-title">Khata Register (Saved Bills)</h1>
-        </div>
-        <div class="date-badge"><i class="bi bi-calendar-event me-2"></i> <%= new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></div>
-    </div>
-</div>
-
-<div class="container">
-    <div class="card">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Date & Time</th>
-                        <th>Customer Name</th>
-                        <th>Phone</th>
-                        <th>Total Bill</th>
-                        <th>Advance</th>
-                        <th>Remaining</th>
-                        <th class="text-end">Details</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% if(records.length > 0) { %>
-                        <% records.forEach(row => { %>
-                            <tr>
-                                <td>
-                                    <div class="fw-bold"><%= new Date(row.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }) %></div>
-                                    <div class="time-text"><%= new Date(row.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %></div>
-                                </td>
-                                <td class="customer-name"><%= row.customer_name %></td>
-                                <td><%= row.customer_phone || 'N/A' %></td>
-                                <td class="amount-total">Rs. <%= Number(row.total_amount).toLocaleString() %></td>
-                                <td class="amount-adv">Rs. <%= Number(row.advance_paid).toLocaleString() %></td>
-                                <td class="amount-rem">Rs. <%= Number(row.remaining_balance).toLocaleString() %></td>
-                                <td class="text-end">
-                                    <button class="btn-view" onclick='showDetails(<%- JSON.stringify(row) %>)'>
-                                        <i class="bi bi-eye"></i> View Bill
-                                    </button>
-                                </td>
-                            </tr>
-                        <% }) %>
-                    <% } else { %>
-                        <tr><td colspan="7" class="text-center py-5 text-muted">Koi record nahi mila.</td></tr>
-                    <% } %>
-                </tbody>
-            </table>
+        <h4 class="text-white mb-0 fw-bold">📜 Saved Bills Record</h4>
+        
+        <div class="d-flex gap-2">
+            <button onclick="deleteAllBills()" class="btn btn-danger btn-sm fw-bold shadow-sm border border-light">
+                <i class="bi bi-trash-fill"></i> Delete All Bills
+            </button>
+            
+            <a href="/" class="btn btn-outline-light btn-sm">Dashboard</a>
         </div>
     </div>
-</div>
+</nav>
 
-<div class="modal fade" id="detailsModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title">Bill Items Detail</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-0">
-                <div id="itemsContent" class="p-3"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-function showDetails(data) {
-    let items = JSON.parse(data.items_json);
-    let html = `
-        <div class="mb-3 p-3 bg-light rounded border">
-            <div class="d-flex justify-content-between mb-1">
-                <strong>Customer:</strong> <span>${data.customer_name}</span>
-            </div>
-            <div class="d-flex justify-content-between">
-                <strong>Phone:</strong> <span>${data.customer_phone || '-'}</span>
-            </div>
-        </div>
-        <table class="table table-bordered table-sm mb-0">
-            <thead class="table-light">
+<div class="container bg-white p-4 shadow rounded">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle table-striped border">
+            <thead class="table-dark">
                 <tr>
-                    <th>Item</th>
-                    <th class="text-center">Qty</th>
-                    <th class="text-end">Price</th>
-                    <th class="text-end">Total</th>
+                    <th>Date & Time</th>
+                    <th>Customer Name</th>
+                    <th>Phone</th>
+                    <th>Total Bill</th>
+                    <th>Advance</th>
+                    <th>Remaining</th>
+                    <th class="text-end">Action</th>
                 </tr>
             </thead>
-            <tbody>`;
-    
-    items.forEach(item => {
-        html += `<tr>
-            <td>${item.name}</td>
-            <td class="text-center">${item.qty} ${item.unit}</td>
-            <td class="text-end">${item.price}</td>
-            <td class="text-end">${item.subtotal.toFixed(2)}</td>
-        </tr>`;
-    });
+            <tbody>
+                <% if (records.length > 0) { %>
+                    <% records.forEach(r => { %>
+                        <tr>
+                            <td class="fw-bold text-muted small"><%= new Date(r.created_at).toLocaleString() %></td>
+                            <td class="fw-bold text-primary"><%= r.customer_name %></td>
+                            <td><%= r.customer_phone %></td>
+                            <td class="fw-bold">Rs. <%= r.total_amount %></td>
+                            <td class="text-success">Rs. <%= r.advance_paid %></td>
+                            <td class="text-danger fw-bold">Rs. <%= r.remaining_balance %></td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-info text-white" onclick="alert('Items Details:\n' + `<%= r.items_json %>`)">
+                                    <i class="bi bi-eye-fill"></i> View
+                                </button>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr><td colspan="7" class="text-center py-5 text-muted fw-bold">Abhi tak koi Bill save nahi hua.</td></tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
 
-    html += `</tbody>
-        <tfoot class="fw-bold">
-            <tr>
-                <td colspan="3" class="text-end">Grand Total:</td>
-                <td class="text-end">Rs. ${Number(data.total_amount).toLocaleString()}</td>
-            </tr>
-            <tr class="text-success">
-                <td colspan="3" class="text-end">Advance Paid:</td>
-                <td class="text-end">Rs. ${Number(data.advance_paid).toLocaleString()}</td>
-            </tr>
-            <tr class="text-danger">
-                <td colspan="3" class="text-end">Remaining:</td>
-                <td class="text-end">Rs. ${Number(data.remaining_balance).toLocaleString()}</td>
-            </tr>
-        </tfoot>
-    </table>`;
-
-    document.getElementById('itemsContent').innerHTML = html;
-    new bootstrap.Modal(document.getElementById('detailsModal')).show();
-}
+<script>
+    function deleteAllBills() {
+        // Step 1: Password poocho
+        let pass = prompt("🛑 DANGER ZONE! \n\nTamam Saved Bills delete ho jayen ge!\nPassword likhein:");
+        
+        if (pass === "mughal123") {
+            // Step 2: Final Confirmation
+            if (confirm("⚠️ Kya aap 100% sure hain?\nYe data wapis nahi aayega!")) {
+                window.location.href = "/delete_all_bills_confirm";
+            }
+        } else if (pass !== null) {
+            alert("❌ Ghalat Password!");
+        }
+    }
 </script>
 
 </body>

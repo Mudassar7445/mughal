@@ -118,8 +118,7 @@ app.get("/delete_khata/:id", requireAuth, async (req, res) => {
     }
 });
 
-// --- DELETE ALL KHATA (DANGER ROUTE) ---
-// Ye wo route hai jo sab kuch saaf kar dega
+// --- DELETE ALL KHATA (Detailed Register) ---
 app.get("/delete_all_khata_confirm", requireAuth, async (req, res) => {
     try {
         await db.execute("DELETE FROM customers_detailed_khata");
@@ -128,7 +127,17 @@ app.get("/delete_all_khata_confirm", requireAuth, async (req, res) => {
         res.send(`<h3>Error Deleting All:</h3><p>${e.message}</p>`);
     }
 });
-// ---------------------------------------
+
+// --- DELETE ALL BILLS (Saved Bills - NEW ADDED) ---
+app.get("/delete_all_bills_confirm", requireAuth, async (req, res) => {
+    try {
+        await db.execute("DELETE FROM khata_records");
+        res.redirect("/customers");
+    } catch (e) {
+        res.send(`<h3>Error Deleting Bills:</h3><p>${e.message}</p>`);
+    }
+});
+// --------------------------------------------------
 
 app.get("/add_customer", requireAuth, (req, res) => res.render("add_customer"));
 app.post("/add_customer", requireAuth, async (req, res) => {
