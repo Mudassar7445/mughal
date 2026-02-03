@@ -32,7 +32,7 @@ const requireAuth = (req, res, next) => {
 
 app.get("/login", (req, res) => res.render("login", { error: null }));
 app.post("/login", (req, res) => {
-    if (req.body.password === "mughal123") {
+    if (req.body.password === "ali1122") {
         req.session.auth = true;
         return res.redirect("/");
     }
