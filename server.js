@@ -4,7 +4,6 @@ const bodyParser = require("body-parser");
 const path = require("path");
 
 // --- DATABASE CONNECTION ---
-// Using /web client to prevent migration/sync errors on Vercel
 const { createClient } = require("@libsql/client/web");
 
 const db = createClient({
@@ -14,7 +13,6 @@ const db = createClient({
 
 const app = express();
 
-// Middlewares & View Engine Setup
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 app.use(express.static(path.join(__dirname, "public")));
@@ -27,13 +25,11 @@ app.use(session({
     saveUninitialized: true
 }));
 
-// Authentication Check
 const requireAuth = (req, res, next) => {
     if (!req.session.auth) return res.redirect("/login");
     next();
 };
 
-// --- AUTH ROUTES ---
 app.get("/login", (req, res) => res.render("login", { error: null }));
 app.post("/login", (req, res) => {
     if (req.body.password === "mughal123") {
@@ -48,7 +44,6 @@ app.get("/logout", (req, res) => {
     res.redirect("/login");
 });
 
-// --- DASHBOARD ---
 app.get("/", requireAuth, async (req, res) => {
     const today = new Date().toISOString().split("T")[0];
     try {
@@ -68,12 +63,10 @@ app.get("/", requireAuth, async (req, res) => {
             date: new Date().toDateString()
         });
     } catch (e) {
-        console.error("Dashboard Error:", e);
         res.send("Dashboard Load Error: " + e.message);
     }
 });
 
-// --- NEW CUSTOMER (WITH ERROR HANDLING) ---
 app.get("/add_customer", requireAuth, (req, res) => {
     res.render("add_customer");
 });
@@ -86,7 +79,6 @@ app.post("/add_customer", requireAuth, async (req, res) => {
     const date = req.body.date || new Date().toISOString().split('T')[0];
 
     try {
-        // Check if customer exists
         const check = await db.execute({
             sql: "SELECT * FROM customers WHERE name = ? AND phone = ?",
             args: [name, phone]
@@ -112,13 +104,11 @@ app.post("/add_customer", requireAuth, async (req, res) => {
         }
         res.redirect("/customer_khata"); 
     } catch (e) {
-        console.error(e);
-        // Loading stop -> Show error
         res.send(`<h3>Error Saving Customer:</h3><p>${e.message}</p><a href='/add_customer'>Go Back</a>`);
     }
 });
 
-// --- CUSTOMER KHATA (WITH ERROR HANDLING) ---
+// --- CUSTOMER KHATA ROUTES ---
 app.get("/customer_khata", requireAuth, async (req, res) => {
     try {
         const history = await db.execute("SELECT * FROM customers_detailed_khata ORDER BY id DESC");
@@ -130,7 +120,6 @@ app.get("/customer_khata", requireAuth, async (req, res) => {
 
 app.post("/customer_khata", requireAuth, async (req, res) => {
     const { customer_name, customer_phone, customer_address, khata_details, total_amount, paid_amount, entry_date } = req.body;
-    
     const total = parseFloat(total_amount) || 0;
     const paid = parseFloat(paid_amount) || 0;
     const balance = total - paid;
@@ -142,13 +131,38 @@ app.post("/customer_khata", requireAuth, async (req, res) => {
         });
         res.redirect("/customer_khata");
     } catch (e) {
-        console.error(e);
-        // Loading stop -> Show error
         res.send(`<h3>Error Saving Khata Entry:</h3><p>${e.message}</p><a href='/customer_khata'>Go Back</a>`);
     }
 });
 
-// --- INVENTORY ROUTES ---
+// --- NEW DELETE KHATA ROUTE (YE ADD KIYA HAI) ---
+app.get("/delete_khata/:id", requireAuth, async (req, res) => {
+    try {
+        await db.execute({
+            sql: "DELETE FROM customers_detailed_khata WHERE id = ?",
+            args: [req.params.id]
+        });
+        res.redirect("/customer_khata");
+    } catch (e) {
+        res.send(`<h3>Error Deleting:</h3><p>${e.message}</p><a href='/customer_khata'>Go Back</a>`);
+    }
+});
+// ------------------------------------------------
+
+app.post("/update_khata", requireAuth, async (req, res) => {
+    const { id, customer_name, customer_phone, khata_details, total_amount, paid_amount, entry_date } = req.body;
+    const balance = parseFloat(total_amount) - parseFloat(paid_amount); 
+    try {
+        await db.execute({
+            sql: "UPDATE customers_detailed_khata SET customer_name=?, customer_phone=?, khata_details=?, total_amount=?, paid_amount=?, balance_amount=?, entry_date=? WHERE id=?",
+            args: [customer_name, customer_phone, khata_details, total_amount, paid_amount, balance, entry_date, id]
+        });
+        res.redirect("/customer_khata");
+    } catch (e) {
+        res.send("Update Error: " + e.message);
+    }
+});
+
 app.get("/inventory", requireAuth, async (req, res) => {
     try {
         const result = await db.execute("SELECT * FROM products ORDER BY id DESC");
@@ -188,7 +202,6 @@ app.get("/delete_product/:id", requireAuth, async (req, res) => {
     res.redirect("/inventory");
 });
 
-// --- BILLING ROUTES ---
 app.get("/billing", requireAuth, async (req, res) => {
     try {
         const products = await db.execute("SELECT * FROM products");
@@ -218,7 +231,6 @@ app.post("/save_khata", requireAuth, async (req, res) => {
     }
 });
 
-// --- HISTORY & RECORDS ---
 app.get("/bill_history", requireAuth, async (req, res) => {
     const query = req.query.query || "";
     const result = await db.execute({
@@ -226,21 +238,6 @@ app.get("/bill_history", requireAuth, async (req, res) => {
         args: [`%${query}%`, query]
     });
     res.render("bill_history", { bills: result.rows, query });
-});
-
-app.post("/update_khata", requireAuth, async (req, res) => {
-    const { id, customer_name, customer_phone, khata_details, total_amount, paid_amount, entry_date } = req.body;
-    const balance = total_amount - paid_amount; 
-    try {
-        await db.execute({
-            sql: "UPDATE customers_detailed_khata SET customer_name=?, customer_phone=?, khata_details=?, total_amount=?, paid_amount=?, balance_amount=?, entry_date=? WHERE id=?",
-            args: [customer_name, customer_phone, khata_details, total_amount, paid_amount, balance, entry_date, id]
-        });
-        res.redirect("/customer_khata");
-    } catch (e) {
-        console.error(e);
-        res.send("Update Error: " + e.message);
-    }
 });
 
 app.get("/customers", requireAuth, async (req, res) => {

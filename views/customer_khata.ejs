@@ -2,127 +2,137 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customer Khata | Mughal Molding</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        body { background: #f3f4f6; font-family: 'Segoe UI', sans-serif; }
-        .sidebar { width: 250px; height: 100vh; background: #1e293b; position: fixed; top: 0; left: 0; padding-top: 20px; }
-        .sidebar-brand { color: white; font-size: 20px; font-weight: bold; padding: 15px 25px; margin-bottom: 20px; display: block; text-decoration: none; }
-        .nav-link { color: #94a3b8; font-size: 15px; padding: 12px 25px; display: flex; align-items: center; text-decoration: none; transition: 0.3s; }
-        .nav-link i { margin-right: 12px; font-size: 18px; }
-        .nav-link.active { background: #3b82f6; color: white; margin-right: 15px; border-top-right-radius: 25px; border-bottom-right-radius: 25px; }
-        .main { margin-left: 250px; padding: 30px; }
-        .khata-card { background: white; padding: 25px; border-radius: 12px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-        .form-label { font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 5px; }
-        .form-control { border: 1px solid #e2e8f0; font-size: 14px; padding: 10px; border-radius: 8px; }
-    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 </head>
-<body>
+<body class="bg-light">
 
-<div class="sidebar">
-    <a href="/" class="sidebar-brand">Mughal Molding</a>
-    <nav>
-        <a href="/" class="nav-link"><i class="bi bi-grid-fill"></i> Dashboard</a>
-        <a href="/billing" class="nav-link"><i class="bi bi-receipt"></i> New Billing</a>
-        <a href="/bill_history" class="nav-link"><i class="bi bi-clock-history"></i> Bill History</a>
-        <a href="/add_customer" class="nav-link"><i class="bi bi-person-plus-fill"></i> Open New Khata</a>
-        <a href="/customer_khata" class="nav-link active"><i class="bi bi-journal-text"></i> Detailed Khata</a>
-        <a href="/inventory" class="nav-link"><i class="bi bi-box-seam"></i> Stock Control</a>
-        <a href="/customers" class="nav-link"><i class="bi bi-person-rolodex"></i> Khata Register</a>
-        <div style="margin-top: 50px;">
-            <a href="/logout" class="nav-link text-danger"><i class="bi bi-box-arrow-right"></i> Logout</a>
-        </div>
-    </nav>
-</div>
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="/">Mughal Molding</a>
+        <a href="/" class="btn btn-secondary btn-sm">Back to Dashboard</a>
+    </div>
+</nav>
 
-<div class="main">
-    <h2 class="fw-bold mb-4">Customer Khata Entry</h2>
-
-    <div class="row g-4">
-        <div class="col-lg-5">
-            <div class="khata-card">
-                <h6 class="fw-bold border-bottom pb-3 mb-3 text-primary"><i class="bi bi-plus-circle me-2"></i>Add New Record</h6>
-                <form method="POST" action="/customer_khata">
-                    <div class="mb-3"><label class="form-label">Customer Name</label><input type="text" name="customer_name" class="form-control" required></div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6"><label class="form-label">Phone</label><input type="text" name="customer_phone" class="form-control"></div>
-                        <div class="col-6"><label class="form-label">Date</label><input type="date" name="entry_date" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>"></div>
-                    </div>
-                    <div class="mb-3"><label class="form-label">Details</label><textarea name="khata_details" class="form-control" rows="3"></textarea></div>
-                    <div class="row g-2 mb-4">
-                        <div class="col-6"><label class="form-label">Total</label><input type="number" name="total_amount" class="form-control" required></div>
-                        <div class="col-6"><label class="form-label">Paid</label><input type="number" name="paid_amount" class="form-control" value="0"></div>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100 fw-bold">SAVE RECORD</button>
-                </form>
+<div class="container">
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">➕ New Khata Entry</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/customer_khata" method="POST">
+                        <div class="mb-2">
+                            <label>Date</label>
+                            <input type="date" name="entry_date" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>" required>
+                        </div>
+                        <div class="mb-2">
+                            <label>Customer Name</label>
+                            <input type="text" name="customer_name" class="form-control" placeholder="Naam likhein" required>
+                        </div>
+                        <div class="mb-2">
+                            <label>Phone</label>
+                            <input type="text" name="customer_phone" class="form-control" placeholder="Mobile Number">
+                        </div>
+                        <div class="mb-2">
+                            <label>Details (Samaan)</label>
+                            <textarea name="khata_details" class="form-control" rows="2" placeholder="Kya samaan liya?"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-2">
+                                <label>Total Amount</label>
+                                <input type="number" name="total_amount" class="form-control" placeholder="0">
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label>Paid (Wasool)</label>
+                                <input type="number" name="paid_amount" class="form-control" placeholder="0">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 mt-2">Save Entry</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="text-center mt-3">
+                <a href="/add_customer" class="btn btn-outline-primary w-100">Add New Customer (Opening Balance)</a>
             </div>
         </div>
 
-        <div class="col-lg-7">
-            <div class="khata-card">
-                <h6 class="fw-bold border-bottom pb-3 mb-3"><i class="bi bi-clock-history me-2"></i>Recent Entries</h6>
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr><th>Date</th><th>Customer</th><th>Total</th><th>Balance</th><th>Action</th></tr>
-                        </thead>
-                        <tbody>
-                            <% history.forEach(row => { %>
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📜 Khata Register</h5>
+                    <input type="text" id="searchBox" class="form-control form-control-sm w-50" placeholder="Search Name..." onkeyup="filterTable()">
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-striped table-hover mb-0" id="khataTable">
+                            <thead class="table-dark sticky-top">
                                 <tr>
-                                    <td><small class="text-muted"><%= row.entry_date %></small></td>
-                                    <td><%= row.customer_name %></td>
-                                    <td><%= Number(row.total_amount).toLocaleString() %></td>
-                                    <td class="text-danger fw-bold"><%= Number(row.balance_amount).toLocaleString() %></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-light border" onclick='openEditModal(<%- JSON.stringify(row) %>)'>
-                                            <i class="bi bi-pencil-square text-primary"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            <% }) %>
-                        </tbody>
-                    </table>
+                                    <th>Date</th>
+                                    <th>Name</th>
+                                    <th>Details</th>
+                                    <th>Total</th>
+                                    <th>Paid</th>
+                                    <th>Balance</th>
+                                    <th>Action</th> </tr>
+                            </thead>
+                            <tbody>
+                                <% if (history.length > 0) { %>
+                                    <% history.forEach(item => { %>
+                                        <tr>
+                                            <td><%= item.entry_date %></td>
+                                            <td class="fw-bold"><%= item.customer_name %> <br> <small class="text-muted"><%= item.customer_phone %></small></td>
+                                            <td><%= item.khata_details %></td>
+                                            <td class="text-primary"><%= item.total_amount %></td>
+                                            <td class="text-success"><%= item.paid_amount %></td>
+                                            <td class="text-danger fw-bold"><%= item.balance_amount %></td>
+                                            <td>
+                                                <a href="/delete_khata/<%= item.id %>" 
+                                                   class="btn btn-sm btn-danger"
+                                                   onclick="return confirm('Kya aap waqai ye entry delete karna chahte hain?');">
+                                                    <i class="bi bi-trash"></i> Del
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">Koi Khata Entry Nahi Hai.</td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="editKhataModal" tabindex="-1">
-    <div class="modal-dialog">
-        <form action="/update_khata" method="POST" class="modal-content">
-            <div class="modal-header bg-dark text-white"><h5 class="modal-title">Edit Khata Record</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body">
-                <input type="hidden" name="id" id="edit_id">
-                <div class="mb-2"><label>Name</label><input type="text" name="customer_name" id="edit_name" class="form-control" required></div>
-                <div class="row mb-2">
-                    <div class="col-6"><label>Phone</label><input type="text" name="customer_phone" id="edit_phone" class="form-control"></div>
-                    <div class="col-6"><label>Date</label><input type="date" name="entry_date" id="edit_date" class="form-control"></div>
-                </div>
-                <div class="mb-2"><label>Details</label><textarea name="khata_details" id="edit_details" class="form-control" rows="3"></textarea></div>
-                <div class="row mb-2">
-                    <div class="col-6"><label>Total Amount</label><input type="number" name="total_amount" id="edit_total" class="form-control"></div>
-                    <div class="col-6"><label>Paid Amount</label><input type="number" name="paid_amount" id="edit_paid" class="form-control"></div>
-                </div>
-            </div>
-            <div class="modal-footer"><button type="submit" class="btn btn-success w-100">Update Record</button></div>
-        </form>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function openEditModal(data) {
-    document.getElementById('edit_id').value = data.id;
-    document.getElementById('edit_name').value = data.customer_name;
-    document.getElementById('edit_phone').value = data.customer_phone;
-    document.getElementById('edit_date').value = data.entry_date;
-    document.getElementById('edit_details').value = data.khata_details;
-    document.getElementById('edit_total').value = data.total_amount;
-    document.getElementById('edit_paid').value = data.paid_amount;
-    new bootstrap.Modal(document.getElementById('editKhataModal')).show();
-}
+    function filterTable() {
+        let input = document.getElementById("searchBox");
+        let filter = input.value.toLowerCase();
+        let table = document.getElementById("khataTable");
+        let tr = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < tr.length; i++) {
+            let td = tr[i].getElementsByTagName("td")[1]; // Name column
+            if (td) {
+                let txtValue = td.textContent || td.innerText;
+                if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }       
+        }
+    }
 </script>
+
 </body>
 </html>
